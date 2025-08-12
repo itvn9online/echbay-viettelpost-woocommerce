@@ -1,0 +1,7 @@
+#billing_address_2_field>label,
+#shipping_address_2_field>label {
+    opacity: 1 !important;
+    overflow: auto !important;
+    /* white-space: nowrap; */
+    width: auto !important;
+}

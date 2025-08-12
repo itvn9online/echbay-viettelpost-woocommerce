@@ -1,0 +1,36 @@
+{
+	"name": "echbay/viettelpost-woocommerce",
+	"description": "ViettelPost integration plugin for WooCommerce",
+	"version": "1.0.0",
+	"type": "wordpress-plugin",
+	"license": "GPL-2.0-or-later",
+	"authors": [
+		{
+			"name": "EchBay",
+			"email": "lienhe@echbay.com",
+			"homepage": "https://echbay.com"
+		}
+	],
+	"keywords": [
+		"wordpress",
+		"woocommerce",
+		"viettelpost",
+		"shipping",
+		"vietnam"
+	],
+	"require": {
+		"php": ">=7.4"
+	},
+	"require-dev": {
+		"phpunit/phpunit": "^9.0"
+	},
+	"autoload": {
+		"psr-4": {
+			"EchBay\\ViettelPost\\": "includes/"
+		}
+	},
+	"support": {
+		"email": "lienhe@echbay.com",
+		"issues": "https://echbay.com/support"
+	}
+}

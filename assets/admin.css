@@ -1,0 +1,115 @@
+/* ViettelPost Admin Styles */
+
+.viettelpost-order-info {
+    padding: 10px 0;
+}
+
+.viettelpost-order-info p {
+    margin: 5px 0;
+}
+
+.viettelpost-order-info .tracking-info {
+    background: #f9f9f9;
+    padding: 10px;
+    border-radius: 4px;
+    margin: 10px 0;
+    max-height: 200px;
+    overflow-y: auto;
+}
+
+.viettelpost-order-info .tracking-info p {
+    margin: 3px 0;
+    font-size: 12px;
+}
+
+.viettelpost-info {
+    background: #fff;
+    border: 1px solid #ddd;
+    padding: 15px;
+    margin: 15px 0;
+}
+
+.viettelpost-info h3 {
+    margin-top: 0;
+    color: #0073aa;
+}
+
+/* Settings page styles */
+.woocommerce_page_wc-settings .form-table th {
+    width: 200px;
+}
+
+#echbay_viettelpost_test_connection,
+#echbay_viettelpost_sync_locations {
+    background: #0073aa;
+    color: white;
+    border: none;
+    padding: 8px 15px;
+    border-radius: 4px;
+    cursor: pointer;
+    margin-right: 10px;
+}
+
+#echbay_viettelpost_test_connection:hover,
+#echbay_viettelpost_sync_locations:hover {
+    background: #005a87;
+}
+
+#echbay_viettelpost_test_connection:disabled,
+#echbay_viettelpost_sync_locations:disabled {
+    background: #ccc;
+    cursor: not-allowed;
+}
+
+/* Frontend tracking styles */
+.tracking-timeline {
+    border-left: 2px solid #0073aa;
+    margin-left: 20px;
+    padding-left: 20px;
+}
+
+.tracking-item {
+    position: relative;
+    margin-bottom: 15px;
+    padding-bottom: 15px;
+    border-bottom: 1px solid #eee;
+}
+
+.tracking-item:before {
+    content: '';
+    position: absolute;
+    left: -25px;
+    top: 5px;
+    width: 8px;
+    height: 8px;
+    background: #0073aa;
+    border-radius: 50%;
+}
+
+.tracking-date {
+    display: block;
+    font-weight: bold;
+    color: #333;
+    margin-bottom: 5px;
+}
+
+.tracking-status {
+    display: block;
+    color: #666;
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+    .viettelpost-order-info .tracking-info {
+        max-height: 150px;
+    }
+
+    .tracking-timeline {
+        margin-left: 10px;
+        padding-left: 15px;
+    }
+
+    .tracking-item:before {
+        left: -20px;
+    }
+}
