@@ -99,6 +99,7 @@ class EchBay_ViettelPost_Order_Handler
             return new WP_Error('invalid_order', 'Đơn hàng không hợp lệ');
         }
         // echo '<pre>' . print_r($order, true) . '</pre>';
+        // die(__FILE__ . ':' . __LINE__);
 
         // Lấy số đơn hàng ViettelPost
         $order_number = $order->get_meta('_viettelpost_order_number', true);

@@ -467,9 +467,11 @@ class EchBay_ViettelPost_Checkout
             // echo '<pre>' . print_r($value, true) . '</pre>';
             // die(__FILE__ . ':' . __LINE__);
             if (isset($value['state'])) {
-                // echo $value['state'] . '<br>' . PHP_EOL;
+                // Get city name
                 if (isset($value['city'])) {
+                    // Get ward name
                     if (isset($value['address_2'])) {
+                        // Get ward name
                         $value['address_2'] = $this->get_ward_name($value['address_2'], $value['city']);
                     }
 
@@ -477,6 +479,9 @@ class EchBay_ViettelPost_Checkout
                 }
 
                 $value['state'] = $this->get_province_name($value['state']);
+                // echo $value['state'] . '<br>' . PHP_EOL;
+                // die(__FUNCTION__ . ':' . __LINE__);
+                // $value['country'] = '';
             }
         }
         return $value;
