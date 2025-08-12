@@ -1,0 +1,16 @@
+# Ignore files that auto-generate and are empty
+includes/class-viettelpost-checkout-new.php
+templates/admin-settings-fixed.php
+
+# IDE files
+.vscode/
+.idea/
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Temporary files
+*.tmp
+*.bak
+*~
