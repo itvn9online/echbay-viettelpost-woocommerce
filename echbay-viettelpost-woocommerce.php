@@ -4,7 +4,7 @@
  * Plugin Name: EchBay ViettelPost WooCommerce
  * Plugin URI: https://echbay.com
  * Description: Tích hợp API ViettelPost với WooCommerce để tự động tạo vận đơn, tính phí vận chuyển và theo dõi đơn hàng.
- * Version: 1.2.8
+ * Version: 1.3.0
  * Author: EchBay
  * Author URI: https://echbay.com
  * Requires at least: 5.8
@@ -30,10 +30,10 @@ add_action('before_woocommerce_init', function () {
 });
 
 // Define plugin constants
-define('ECHBAY_VIETTELPOST_VERSION', '1.2.9');
+define('ECHBAY_VIETTELPOST_VERSION', '1.3.0');
 define('ECHBAY_VIETTELPOST_DEBUG', strpos($_SERVER['HTTP_HOST'], 'demo.') !== false ? date('ymd.His') : ECHBAY_VIETTELPOST_VERSION);
 define('ECHBAY_VIETTELPOST_PLUGIN_URL', plugin_dir_url(__FILE__));
-define('ECHBAY_VIETTELPOST_PLUGIN_PATH', plugin_dir_path(__FILE__));
+define('ECHBAY_VIETTELPOST_PLUGIN_PATH', __DIR__ . '/');
 define('ECHBAY_VIETTELPOST_PLUGIN_BASENAME', plugin_basename(__FILE__));
 define('ECHBAY_VIETTELPOST_ORDER_SERVICE', [
     '' => 'Chọn Loại dịch vụ',

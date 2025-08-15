@@ -186,7 +186,6 @@ class EchBay_ViettelPost_Order_Handler
         }
 
         $error_message = isset($result['message']) ? $result['message'] : 'Không thể tạo vận đơn';
-        $error_message = isset($result['message']) ? $result['message'] : 'Không thể tạo vận đơn';
         $order->add_order_note(
             sprintf('Lỗi tạo vận đơn ViettelPost: %s', $error_message)
         );
@@ -443,7 +442,8 @@ class EchBay_ViettelPost_Order_Handler
 
         echo '</div>';
 
-        // Add JavaScript
+        // Add CSS and JavaScript
+        wp_enqueue_style('viettelpost-admin-order', ECHBAY_VIETTELPOST_PLUGIN_URL . 'assets/admin.css', array(), ECHBAY_VIETTELPOST_DEBUG);
         wp_enqueue_script('viettelpost-admin-order', ECHBAY_VIETTELPOST_PLUGIN_URL . 'assets/admin-order.js', array('jquery'), ECHBAY_VIETTELPOST_DEBUG, true);
         wp_localize_script('viettelpost-admin-order', 'viettelpost_ajax', array(
             'ajax_url' => admin_url('admin-ajax.php'),
@@ -639,6 +639,8 @@ class EchBay_ViettelPost_Order_Handler
              LIMIT 10"
         );
 
+        // 
+        $count = 0;
         foreach ($orders as $queue_item) {
             // Update status to processing
             $wpdb->update(
@@ -679,7 +681,9 @@ class EchBay_ViettelPost_Order_Handler
                     array('%d')
                 );
             }
+            $count++;
         }
+        return $count;
     }
 
     /**
@@ -693,7 +697,7 @@ class EchBay_ViettelPost_Order_Handler
 
         $stats = $wpdb->get_row(
             "SELECT 
-                COUNT(*) as total,
+                COUNT(id) as total,
                 SUM(CASE WHEN status = 'pending' THEN 1 ELSE 0 END) as pending,
                 SUM(CASE WHEN status = 'processing' THEN 1 ELSE 0 END) as processing,
                 SUM(CASE WHEN status = 'completed' THEN 1 ELSE 0 END) as completed,

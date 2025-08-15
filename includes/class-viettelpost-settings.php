@@ -99,6 +99,7 @@ class EchBay_ViettelPost_Settings
 ?>
         <div class="viettelpost-documentation">
             <h2>Tài liệu hướng dẫn ViettelPost WooCommerce</h2>
+            <br />
 
             <div class="viettelpost-docs-container">
                 <!-- Getting Started -->
@@ -296,111 +297,32 @@ $result = $api->get_order_detail($order_number);</code></pre>
                     </div>
                 </div>
             </div>
+
+            <div>
+                <h3>Cron Job Information</h3>
+
+                <h4>Client-side Cron (Recommended)</h4>
+                <p>Add this JavaScript code to your theme footer to process emails on each page visit:</p>
+                <div>
+                    <textarea readonly rows="10" ondblclick="this.select();" style="width: 99%;"><?php echo esc_html("<script>
+document.addEventListener('DOMContentLoaded', function() {
+    var script = document.createElement('script');
+    script.src = window.location.origin + '/wp-content/plugins/echbay-viettelpost-woocommerce/assets/js/frontend.js?v=' + Math.random();
+    script.type = 'text/javascript';
+    script.defer = true; // hoặc script.async = true;
+    document.body.appendChild(script); // chèn vào cuối body (footer)
+});
+</script>"); ?></textarea>
+                </div>
+
+                <h4>Server Cron (Required)</h4>
+                <p>Add this to your server crontab (runs every minute):</p>
+                <code>
+                    * * * * * curl -s "<?php echo esc_html(str_replace(ABSPATH, get_home_url() . '/', ECHBAY_VIETTELPOST_PLUGIN_PATH)); ?>cron-order.php" > /dev/null 2>&1
+                </code>
+                <p><em>This plugin no longer uses WordPress cron. Please use server cron for better reliability.</em></p>
+            </div>
         </div>
-
-        <style>
-            .viettelpost-documentation {
-                max-width: 1200px;
-            }
-
-            .viettelpost-docs-container {
-                background: #fff;
-                border: 1px solid #ddd;
-                border-radius: 4px;
-                overflow: hidden;
-            }
-
-            .viettelpost-docs-section {
-                border-bottom: 1px solid #eee;
-            }
-
-            .viettelpost-docs-section:last-child {
-                border-bottom: none;
-            }
-
-            .viettelpost-docs-section h3 {
-                background: #f8f9fa;
-                margin: 0;
-                padding: 15px 20px;
-                border-bottom: 1px solid #eee;
-                cursor: pointer;
-                position: relative;
-            }
-
-            .viettelpost-docs-section h3:hover {
-                background: #e9ecef;
-            }
-
-            .viettelpost-docs-section h3:after {
-                content: '▼';
-                position: absolute;
-                right: 20px;
-                transition: transform 0.2s;
-            }
-
-            .viettelpost-docs-section.collapsed h3:after {
-                transform: rotate(-90deg);
-            }
-
-            .viettelpost-docs-content {
-                padding: 20px;
-                display: block;
-            }
-
-            .viettelpost-docs-section.collapsed .viettelpost-docs-content {
-                display: none;
-            }
-
-            .viettelpost-docs-content h4 {
-                color: #0073aa;
-                margin-top: 20px;
-                margin-bottom: 10px;
-            }
-
-            .viettelpost-docs-content h4:first-child {
-                margin-top: 0;
-            }
-
-            .viettelpost-docs-content h5 {
-                color: #333;
-                margin-top: 15px;
-                margin-bottom: 8px;
-            }
-
-            .viettelpost-docs-content ul,
-            .viettelpost-docs-content ol {
-                margin-left: 20px;
-                margin-bottom: 15px;
-            }
-
-            .viettelpost-docs-content li {
-                margin-bottom: 5px;
-                line-height: 1.5;
-            }
-
-            .viettelpost-docs-content pre {
-                background: #f4f4f4;
-                padding: 15px;
-                border-radius: 4px;
-                overflow-x: auto;
-                margin: 15px 0;
-            }
-
-            .viettelpost-docs-content code {
-                font-family: 'Courier New', monospace;
-                font-size: 13px;
-                line-height: 1.4;
-            }
-
-            .viettelpost-docs-content a {
-                color: #0073aa;
-                text-decoration: none;
-            }
-
-            .viettelpost-docs-content a:hover {
-                text-decoration: underline;
-            }
-        </style>
     <?php
     }
 
@@ -929,6 +851,15 @@ $result = $api->get_order_detail($order_number);</code></pre>
             return;
         }
 
+        // Enqueue admin CSS
+        wp_enqueue_style(
+            'echbay-viettelpost-admin',
+            ECHBAY_VIETTELPOST_PLUGIN_URL . 'assets/admin.css',
+            array(),
+            ECHBAY_VIETTELPOST_DEBUG
+        );
+
+        // Enqueue admin JS
         wp_enqueue_script(
             'echbay-viettelpost-admin',
             ECHBAY_VIETTELPOST_PLUGIN_URL . 'assets/admin.js',

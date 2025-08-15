@@ -113,3 +113,174 @@
         left: -20px;
     }
 }
+
+/* Documentation Styles - từ class-viettelpost-settings.php */
+.viettelpost-documentation {
+    max-width: 1200px;
+}
+
+.viettelpost-docs-container {
+    background: #fff;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+    overflow: hidden;
+}
+
+.viettelpost-docs-section {
+    border-bottom: 1px solid #eee;
+}
+
+.viettelpost-docs-section:last-child {
+    border-bottom: none;
+}
+
+.viettelpost-docs-section h3 {
+    background: #f8f9fa;
+    margin: 0;
+    padding: 15px 20px;
+    border-bottom: 1px solid #eee;
+    cursor: pointer;
+    position: relative;
+}
+
+.viettelpost-docs-section h3:hover {
+    background: #e9ecef;
+}
+
+.viettelpost-docs-section h3:after {
+    content: '▼';
+    position: absolute;
+    right: 20px;
+    transition: transform 0.2s;
+}
+
+.viettelpost-docs-section.collapsed h3:after {
+    transform: rotate(-90deg);
+}
+
+.viettelpost-docs-content {
+    padding: 20px;
+    display: block;
+}
+
+.viettelpost-docs-section.collapsed .viettelpost-docs-content {
+    display: none;
+}
+
+.viettelpost-docs-content h4 {
+    color: #0073aa;
+    margin-top: 20px;
+    margin-bottom: 10px;
+}
+
+.viettelpost-docs-content h4:first-child {
+    margin-top: 0;
+}
+
+.viettelpost-docs-content h5 {
+    color: #333;
+    margin-top: 15px;
+    margin-bottom: 8px;
+}
+
+.viettelpost-docs-content ul,
+.viettelpost-docs-content ol {
+    margin-left: 20px;
+    margin-bottom: 15px;
+}
+
+.viettelpost-docs-content li {
+    margin-bottom: 5px;
+    line-height: 1.5;
+}
+
+.viettelpost-docs-content pre {
+    background: #f4f4f4;
+    padding: 15px;
+    border-radius: 4px;
+    overflow-x: auto;
+    margin: 15px 0;
+}
+
+.viettelpost-docs-content code {
+    font-family: 'Courier New', monospace;
+    font-size: 13px;
+    line-height: 1.4;
+}
+
+.viettelpost-docs-content a {
+    color: #0073aa;
+    text-decoration: none;
+}
+
+.viettelpost-docs-content a:hover {
+    text-decoration: underline;
+}
+
+/* Settings Page Layout - từ admin-settings.php */
+.viettelpost-settings-container {
+    display: flex;
+    gap: 20px;
+    margin-top: 20px;
+}
+
+.viettelpost-settings-main {
+    flex: 2;
+}
+
+.viettelpost-settings-sidebar {
+    flex: 1;
+    max-width: 300px;
+}
+
+.viettelpost-info-box,
+.viettelpost-help-box,
+.viettelpost-support-box,
+.viettelpost-donate-box {
+    background: #fff;
+    border: 1px solid #ccd0d4;
+    padding: 15px;
+    margin-bottom: 20px;
+    box-shadow: 0 1px 1px rgba(0, 0, 0, 0.04);
+}
+
+.viettelpost-info-box h3,
+.viettelpost-help-box h3,
+.viettelpost-support-box h3,
+.viettelpost-donate-box h3 {
+    margin-top: 0;
+    margin-bottom: 15px;
+    font-size: 16px;
+    color: #23282d;
+}
+
+.viettelpost-help-box ul {
+    margin: 0;
+    padding-left: 20px;
+}
+
+.viettelpost-help-box li {
+    margin-bottom: 8px;
+    line-height: 1.5;
+}
+
+.viettelpost-support-box p,
+.viettelpost-donate-box p {
+    margin-bottom: 10px;
+    line-height: 1.5;
+}
+
+.viettelpost-donate-box .button {
+    margin-top: 10px;
+}
+
+/* Responsive cho settings page */
+@media (max-width: 768px) {
+    .viettelpost-settings-container {
+        flex-direction: column;
+    }
+
+    .viettelpost-settings-sidebar {
+        max-width: none;
+    }
+}
