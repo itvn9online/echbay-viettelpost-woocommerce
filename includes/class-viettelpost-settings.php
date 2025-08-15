@@ -562,10 +562,14 @@ $result = $api->get_order_detail($order_number);</code></pre>
 
             array(
                 'name' => 'Tự động tạo vận đơn',
-                'type' => 'checkbox',
-                'desc' => 'Tự động tạo vận đơn ViettelPost khi đơn hàng được xử lý',
+                'type' => 'select',
+                'desc' => 'Tùy chọn tự động tạo vận đơn ViettelPost khi đơn hàng được xử lý',
                 'id'   => 'echbay_viettelpost_auto_create_order',
-                // default value yes or no
+                'options' => array(
+                    'no' => 'Không tự động',
+                    'yes' => 'Tự động',
+                    'queue' => 'Đưa vào hàng đợi',
+                ),
                 'default' => 'no',
             ),
 

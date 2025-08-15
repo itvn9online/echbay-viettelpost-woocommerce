@@ -55,7 +55,8 @@ class EchBay_ViettelPost_Order_Handler
     public function maybe_create_viettelpost_order($order_id)
     {
         // Check if auto-create is enabled
-        if (get_option('echbay_viettelpost_auto_create_order') != 'yes') {
+        $auto_create = get_option('echbay_viettelpost_auto_create_order', 'no');
+        if ($auto_create == 'no') {
             // die(__CLASS__ . ':' . __LINE__);
             return;
         }
@@ -100,6 +101,12 @@ class EchBay_ViettelPost_Order_Handler
                 return;
             }
             // die(__CLASS__ . ':' . __LINE__);
+        }
+
+        // Queue the order for creation
+        if ($auto_create == 'queue') {
+            $this->add_order_to_queue($order_id);
+            return;
         }
 
         // Create ViettelPost order
@@ -174,9 +181,6 @@ class EchBay_ViettelPost_Order_Handler
             $order->add_order_note(
                 sprintf('Đã tạo vận đơn ViettelPost: %s', $order_number)
             );
-
-            // Schedule tracking update
-            wp_schedule_single_event(time() + 3600, 'echbay_viettelpost_update_tracking', array($order_id));
 
             return $order_number;
         }
@@ -580,5 +584,123 @@ class EchBay_ViettelPost_Order_Handler
         } else {
             wp_send_json_success('Đã gửi yêu cầu in nhãn');
         }
+    }
+
+    /**
+     * Add order to queue
+     */
+    public function add_order_to_queue($order_id)
+    {
+        global $wpdb;
+
+        $table_name = $wpdb->prefix . 'echbay_viettelpost_queue';
+
+        // Check if order already exists in queue
+        $existing = $wpdb->get_row($wpdb->prepare(
+            "SELECT * FROM $table_name WHERE order_id = %d AND status IN ('pending', 'processing')",
+            $order_id
+        ));
+
+        if ($existing) {
+            return false; // Already in queue
+        }
+
+        // Insert order into queue
+        $result = $wpdb->insert(
+            $table_name,
+            array(
+                'order_id' => $order_id,
+                'attempts' => 0,
+                'max_attempts' => 3,
+                'created_at' => current_time('mysql'),
+                'status' => 'pending'
+            ),
+            array('%d', '%d', '%d', '%s', '%s')
+        );
+
+        return $result !== false;
+    }
+
+    /**
+     * Process queue - called by cron
+     */
+    public function process_queue()
+    {
+        global $wpdb;
+
+        $table_name = $wpdb->prefix . 'echbay_viettelpost_queue';
+
+        // Get pending orders from queue
+        $orders = $wpdb->get_results(
+            "SELECT * FROM $table_name 
+             WHERE status = 'pending' 
+             AND attempts < max_attempts 
+             ORDER BY created_at ASC 
+             LIMIT 10"
+        );
+
+        foreach ($orders as $queue_item) {
+            // Update status to processing
+            $wpdb->update(
+                $table_name,
+                array('status' => 'processing'),
+                array('id' => $queue_item->id),
+                array('%s'),
+                array('%d')
+            );
+
+            // Try to create ViettelPost order
+            $result = $this->create_viettelpost_order($queue_item->order_id);
+
+            if (is_wp_error($result)) {
+                // Failed - increment attempts
+                $wpdb->update(
+                    $table_name,
+                    array(
+                        'attempts' => $queue_item->attempts + 1,
+                        'status' => $queue_item->attempts + 1 >= $queue_item->max_attempts ? 'failed' : 'pending',
+                        'error_message' => $result->get_error_message()
+                    ),
+                    array('id' => $queue_item->id),
+                    array('%d', '%s', '%s'),
+                    array('%d')
+                );
+            } else {
+                // Success - mark as completed
+                $wpdb->update(
+                    $table_name,
+                    array(
+                        'status' => 'completed',
+                        'sent_at' => current_time('mysql'),
+                        'vtp_id' => $result
+                    ),
+                    array('id' => $queue_item->id),
+                    array('%s', '%s', '%s'),
+                    array('%d')
+                );
+            }
+        }
+    }
+
+    /**
+     * Get queue statistics
+     */
+    public function get_queue_stats()
+    {
+        global $wpdb;
+
+        $table_name = $wpdb->prefix . 'echbay_viettelpost_queue';
+
+        $stats = $wpdb->get_row(
+            "SELECT 
+                COUNT(*) as total,
+                SUM(CASE WHEN status = 'pending' THEN 1 ELSE 0 END) as pending,
+                SUM(CASE WHEN status = 'processing' THEN 1 ELSE 0 END) as processing,
+                SUM(CASE WHEN status = 'completed' THEN 1 ELSE 0 END) as completed,
+                SUM(CASE WHEN status = 'failed' THEN 1 ELSE 0 END) as failed
+             FROM $table_name"
+        );
+
+        return $stats;
     }
 }

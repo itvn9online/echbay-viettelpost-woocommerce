@@ -227,10 +227,8 @@ class EchBay_ViettelPost_WooCommerce
      */
     public static function activate()
     {
-        // Create necessary database tables or options if needed
-        if (!wp_next_scheduled('echbay_viettelpost_sync_locations')) {
-            wp_schedule_event(time(), 'daily', 'echbay_viettelpost_sync_locations');
-        }
+        // Create queue table
+        self::create_queue_table();
     }
 
     /**
@@ -238,8 +236,39 @@ class EchBay_ViettelPost_WooCommerce
      */
     public static function deactivate()
     {
-        // Clear scheduled events
-        wp_clear_scheduled_hook('echbay_viettelpost_sync_locations');
+        // Plugin deactivated - queue table will remain for data integrity
+        // You can manually drop the table if needed
+    }
+
+    /**
+     * Create queue table
+     */
+    private static function create_queue_table()
+    {
+        global $wpdb;
+
+        $table_name = $wpdb->prefix . 'echbay_viettelpost_queue';
+
+        $charset_collate = $wpdb->get_charset_collate();
+
+        $sql = "CREATE TABLE $table_name (
+            id bigint(20) unsigned NOT NULL AUTO_INCREMENT,
+            order_id bigint(20) unsigned NOT NULL,
+            attempts int(11) NOT NULL DEFAULT 0,
+            max_attempts int(11) NOT NULL DEFAULT 3,
+            created_at datetime NOT NULL,
+            sent_at datetime NULL,
+            error_message text NULL,
+            vtp_id varchar(100) NULL,
+            status enum('pending','processing','completed','failed') NOT NULL DEFAULT 'pending',
+            PRIMARY KEY (id),
+            KEY order_id (order_id),
+            KEY status (status),
+            KEY created_at (created_at)
+        ) $charset_collate;";
+
+        require_once(ABSPATH . 'wp-admin/includes/upgrade.php');
+        dbDelta($sql);
     }
 }
 
