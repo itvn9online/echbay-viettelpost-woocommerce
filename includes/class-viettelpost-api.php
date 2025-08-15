@@ -18,9 +18,10 @@ class EchBay_ViettelPost_API
 {
 
     /**
-     * API Base URL
+     * API Base URLs
      */
-    const API_BASE_URL = 'https://partner.viettelpost.vn/v2';
+    const API_BASE_URL_PRODUCTION = 'https://partner.viettelpost.vn/v2';
+    const API_BASE_URL_DEVELOPMENT = 'https://partnerdev.viettelpost.vn/v2';
 
     /**
      * API Token
@@ -38,13 +39,29 @@ class EchBay_ViettelPost_API
     private $password;
 
     /**
+     * Environment
+     */
+    private $environment;
+
+    /**
      * Constructor
      */
     public function __construct()
     {
         $this->username = get_option('echbay_viettelpost_username', '');
         $this->password = get_option('echbay_viettelpost_password', '');
+        $this->environment = get_option('echbay_viettelpost_environment', 'development');
         $this->token = get_transient('echbay_viettelpost_token');
+    }
+
+    /**
+     * Get API base URL based on environment
+     */
+    private function get_api_base_url()
+    {
+        return $this->environment === 'production'
+            ? self::API_BASE_URL_PRODUCTION
+            : self::API_BASE_URL_DEVELOPMENT;
     }
 
     /**
@@ -56,7 +73,7 @@ class EchBay_ViettelPost_API
             return new WP_Error('missing_credentials', 'Thiếu thông tin đăng nhập API');
         }
 
-        $response = wp_remote_post(self::API_BASE_URL . '/user/login', array(
+        $response = wp_remote_post($this->get_api_base_url() . '/user/login', array(
             'headers' => array(
                 'Content-Type' => 'application/json',
             ),
@@ -111,7 +128,7 @@ class EchBay_ViettelPost_API
             $args['body'] = json_encode($data);
         }
 
-        $response = wp_remote_request(self::API_BASE_URL . $endpoint, $args);
+        $response = wp_remote_request($this->get_api_base_url() . $endpoint, $args);
 
         if (is_wp_error($response)) {
             return $response;
@@ -131,7 +148,7 @@ class EchBay_ViettelPost_API
 
             // Retry the request with new token
             $args['headers']['Token'] = $this->token;
-            $response = wp_remote_request(self::API_BASE_URL . $endpoint, $args);
+            $response = wp_remote_request($this->get_api_base_url() . $endpoint, $args);
 
             if (is_wp_error($response)) {
                 return $response;
@@ -162,7 +179,7 @@ class EchBay_ViettelPost_API
             $args['body'] = json_encode($data);
         }
 
-        $response = wp_remote_request(self::API_BASE_URL . $endpoint, $args);
+        $response = wp_remote_request($this->get_api_base_url() . $endpoint, $args);
 
         if (is_wp_error($response)) {
             return $response;

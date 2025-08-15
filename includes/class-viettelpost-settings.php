@@ -363,6 +363,19 @@ document.addEventListener('DOMContentLoaded', function() {
             ),
 
             array(
+                'name' => 'Chế độ hoạt động',
+                'type' => 'select',
+                'desc' => 'Chọn môi trường API ViettelPost. Development để test, Production cho website thực tế.',
+                'id'   => 'echbay_viettelpost_environment',
+                'options' => array(
+                    'development' => 'Development (https://partnerdev.viettelpost.vn)',
+                    'production' => 'Production (https://partner.viettelpost.vn)'
+                ),
+                'default' => 'development',
+                'class' => 'wc-enhanced-select'
+            ),
+
+            array(
                 'name' => 'Tên đăng nhập',
                 'type' => 'text',
                 'desc' => 'Tên đăng nhập tài khoản ViettelPost Partner',
