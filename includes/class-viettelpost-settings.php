@@ -846,6 +846,7 @@ $result = $api->get_order_detail($order_number);</code></pre>
 
             // Update provinces option
             update_option('echbay_viettelpost_provinces', $provinces_result['data']);
+            $result['provinces'] = $provinces_result['data'];
         }
         // file_put_contents(__DIR__ . '/' . basename(__FILE__, '.php') . '.log', print_r($provinces_result, true));
 

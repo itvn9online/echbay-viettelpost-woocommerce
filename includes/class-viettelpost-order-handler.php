@@ -55,34 +55,51 @@ class EchBay_ViettelPost_Order_Handler
     public function maybe_create_viettelpost_order($order_id)
     {
         // Check if auto-create is enabled
-        if (get_option('echbay_viettelpost_auto_create_order') !== 'yes') {
+        if (get_option('echbay_viettelpost_auto_create_order') != 'yes') {
+            // die(__CLASS__ . ':' . __LINE__);
             return;
         }
 
         // Get order object
         $order = wc_get_order($order_id);
         if (!$order) {
+            // die(__CLASS__ . ':' . __LINE__);
             return;
         }
 
         // Check if order already has ViettelPost order number
         if ($order->get_meta('_viettelpost_order_number', true)) {
+            // die(__CLASS__ . ':' . __LINE__);
+            return;
+        }
+
+        // Debugging output
+        if (get_option('echbay_viettelpost_auto_create_status') != 'wc-' . $order->get_status()) {
+            // echo 'echbay_viettelpost_auto_create_status: ' . get_option('echbay_viettelpost_auto_create_status') . '<br>' . PHP_EOL;
+            // echo 'order get_status: ' . $order->get_status() . '<br>' . PHP_EOL;
+            // die(__CLASS__ . ':' . __LINE__);
             return;
         }
 
         // Check if order uses ViettelPost shipping method
-        $shipping_methods = $order->get_shipping_methods();
-        $has_viettelpost = false;
+        if (1 > 2) {
+            $shipping_methods = $order->get_shipping_methods();
+            // print_r($shipping_methods, true);
+            $has_viettelpost = false;
 
-        foreach ($shipping_methods as $shipping_method) {
-            if ($shipping_method->get_method_id() === 'viettelpost') {
-                $has_viettelpost = true;
-                break;
+            foreach ($shipping_methods as $shipping_method) {
+                if ($shipping_method->get_method_id() === 'viettelpost') {
+                    $has_viettelpost = true;
+                    break;
+                }
             }
-        }
+            // var_dump($has_viettelpost);
 
-        if (!$has_viettelpost) {
-            return;
+            if (!$has_viettelpost) {
+                // die(__CLASS__ . ':' . __LINE__);
+                return;
+            }
+            // die(__CLASS__ . ':' . __LINE__);
         }
 
         // Create ViettelPost order

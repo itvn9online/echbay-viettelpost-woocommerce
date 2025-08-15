@@ -145,11 +145,39 @@ class EchBay_ViettelPost_API
     }
 
     /**
+     * Make API public request
+     * Các request này không cần token
+     */
+    private function make_public_request($endpoint, $method = 'GET', $data = array())
+    {
+        $args = array(
+            'method' => $method,
+            'headers' => array(
+                'Content-Type' => 'application/json',
+            ),
+            'timeout' => 30
+        );
+
+        if (!empty($data)) {
+            $args['body'] = json_encode($data);
+        }
+
+        $response = wp_remote_request(self::API_BASE_URL . $endpoint, $args);
+
+        if (is_wp_error($response)) {
+            return $response;
+        }
+
+        $body = wp_remote_retrieve_body($response);
+        return json_decode($body, true);
+    }
+
+    /**
      * Get provinces
      */
     public function get_provinces($provinceId = '-1')
     {
-        return $this->make_request('/categories/listProvinceById?provinceId=' . $provinceId);
+        return $this->make_public_request('/categories/listProvinceById?provinceId=' . $provinceId);
     }
 
     /**
@@ -157,7 +185,7 @@ class EchBay_ViettelPost_API
      */
     public function get_districts($province_id)
     {
-        return $this->make_request('/categories/listDistrict?provinceId=' . $province_id);
+        return $this->make_public_request('/categories/listDistrict?provinceId=' . $province_id);
     }
 
     /**
@@ -165,7 +193,7 @@ class EchBay_ViettelPost_API
      */
     public function get_wards($district_id)
     {
-        return $this->make_request('/categories/listWards?districtId=' . $district_id);
+        return $this->make_public_request('/categories/listWards?districtId=' . $district_id);
     }
 
     /**
