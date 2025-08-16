@@ -63,6 +63,8 @@ class EchBay_ViettelPost_Settings
 
         if ($current_section === 'documentation') {
             $this->documentation_section();
+        } elseif ($current_section === 'queue') {
+            $this->queue_section();
         } else {
             woocommerce_admin_fields($this->get_settings());
         }
@@ -78,6 +80,7 @@ class EchBay_ViettelPost_Settings
 
         $sections = array(
             '' => 'Cài đặt',
+            'queue' => 'Hàng đợi',
             'documentation' => 'Tài liệu hướng dẫn'
         );
 
@@ -322,6 +325,216 @@ document.addEventListener('DOMContentLoaded', function() {
                 </code>
                 <p><em>This plugin no longer uses WordPress cron. Please use server cron for better reliability.</em></p>
             </div>
+        </div>
+    <?php
+    }
+
+    /**
+     * Display queue section
+     */
+    public function queue_section()
+    {
+        global $wpdb;
+
+        // Get pagination parameters
+        $paged = isset($_GET['paged']) ? max(1, intval($_GET['paged'])) : 1;
+        $per_page = 20;
+        $offset = ($paged - 1) * $per_page;
+
+        // Get total records count
+        $table_name = $wpdb->prefix . 'echbay_viettelpost_queue';
+        $total_items = $wpdb->get_var("SELECT COUNT(*) FROM {$table_name}");
+        $total_pages = ceil($total_items / $per_page);
+
+        // Get queue items with pagination
+        $queue_items = $wpdb->get_results($wpdb->prepare(
+            "SELECT * FROM {$table_name} ORDER BY created_at DESC LIMIT %d OFFSET %d",
+            $per_page,
+            $offset
+        ));
+
+        // Handle actions
+        if (isset($_GET['action']) && isset($_GET['queue_id'])) {
+            $queue_id = intval($_GET['queue_id']);
+            $action = sanitize_text_field($_GET['action']);
+
+            if ($action === 'delete') {
+                $wpdb->delete($table_name, array('id' => $queue_id), array('%d'));
+                echo '<div class="notice notice-success"><p>Đã xóa mục khỏi hàng đợi!</p></div>';
+            } elseif ($action === 'retry') {
+                $wpdb->update(
+                    $table_name,
+                    array('attempts' => 0, 'error_message' => ''),
+                    array('id' => $queue_id),
+                    array('%d', '%s'),
+                    array('%d')
+                );
+                echo '<div class="notice notice-success"><p>Đã đặt lại mục để thử lại!</p></div>';
+            }
+
+            // Refresh data after action
+            $queue_items = $wpdb->get_results($wpdb->prepare(
+                "SELECT * FROM {$table_name} ORDER BY created_at DESC LIMIT %d OFFSET %d",
+                $per_page,
+                $offset
+            ));
+        }
+
+    ?>
+        <div class="viettelpost-queue-section">
+            <h2>Hàng đợi ViettelPost</h2>
+            <p>Danh sách các đơn hàng đang chờ tạo vận đơn ViettelPost</p>
+
+            <div class="tablenav top">
+                <div class="alignleft actions">
+                    <p>Tổng: <?php echo $total_items; ?> mục</p>
+                </div>
+                <?php if ($total_pages > 1): ?>
+                    <div class="tablenav-pages">
+                        <span class="displaying-num"><?php echo $total_items; ?> mục</span>
+                        <span class="pagination-links">
+                            <?php
+                            $base_url = admin_url('admin.php?page=wc-settings&tab=viettelpost&section=queue');
+
+                            if ($paged > 1): ?>
+                                <a class="first-page button" href="<?php echo $base_url; ?>&paged=1">&laquo;</a>
+                                <a class="prev-page button" href="<?php echo $base_url; ?>&paged=<?php echo ($paged - 1); ?>">&lsaquo;</a>
+                            <?php endif; ?>
+
+                            <span class="paging-input">
+                                <label for="current-page-selector" class="screen-reader-text">Trang hiện tại</label>
+                                <input class="current-page" id="current-page-selector" type="text" name="paged" value="<?php echo $paged; ?>" size="2" readonly>
+                                <span class="tablenav-paging-text"> trong <span class="total-pages"><?php echo $total_pages; ?></span></span>
+                            </span>
+
+                            <?php if ($paged < $total_pages): ?>
+                                <a class="next-page button" href="<?php echo $base_url; ?>&paged=<?php echo ($paged + 1); ?>">&rsaquo;</a>
+                                <a class="last-page button" href="<?php echo $base_url; ?>&paged=<?php echo $total_pages; ?>">&raquo;</a>
+                            <?php endif; ?>
+                        </span>
+                    </div>
+                <?php endif; ?>
+            </div>
+
+            <table class="wp-list-table widefat fixed striped">
+                <thead>
+                    <tr>
+                        <th scope="col" class="manage-column column-id">ID</th>
+                        <th scope="col" class="manage-column column-order">Đơn hàng</th>
+                        <th scope="col" class="manage-column column-status">Trạng thái</th>
+                        <th scope="col" class="manage-column column-attempts">Lần thử</th>
+                        <th scope="col" class="manage-column column-created">Tạo lúc</th>
+                        <th scope="col" class="manage-column column-sent">Gửi lúc</th>
+                        <th scope="col" class="manage-column column-error">Lỗi</th>
+                        <th scope="col" class="manage-column column-actions">Thao tác</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <?php if (empty($queue_items)): ?>
+                        <tr>
+                            <td colspan="8" style="text-align: center; padding: 20px;">Không có mục nào trong hàng đợi</td>
+                        </tr>
+                    <?php else: ?>
+                        <?php foreach ($queue_items as $item): ?>
+                            <tr>
+                                <td><?php echo esc_html($item->id); ?></td>
+                                <td>
+                                    <strong>
+                                        <a href="<?php echo admin_url('post.php?post=' . $item->order_id . '&action=edit'); ?>" target="_blank">
+                                            #<?php echo esc_html($item->order_id); ?>
+                                        </a>
+                                    </strong>
+                                    <?php if ($item->vtp_id): ?>
+                                        <br><small>VTP: <?php echo esc_html($item->vtp_id); ?></small>
+                                    <?php endif; ?>
+                                </td>
+                                <td>
+                                    <?php
+                                    $status_class = '';
+                                    $status_text = '';
+                                    switch ($item->status) {
+                                        case 'pending':
+                                            $status_class = 'pending';
+                                            $status_text = 'Đang chờ';
+                                            break;
+                                        case 'processing':
+                                            $status_class = 'processing';
+                                            $status_text = 'Đang xử lý';
+                                            break;
+                                        case 'completed':
+                                            $status_class = 'completed';
+                                            $status_text = 'Hoàn thành';
+                                            break;
+                                        case 'failed':
+                                            $status_class = 'failed';
+                                            $status_text = 'Thất bại';
+                                            break;
+                                        default:
+                                            $status_class = 'pending';
+                                            $status_text = ucfirst($item->status);
+                                    }
+                                    ?>
+                                    <span class="status-<?php echo $status_class; ?>"><?php echo $status_text; ?></span>
+                                </td>
+                                <td>
+                                    <?php echo esc_html($item->attempts); ?>/<?php echo esc_html($item->max_attempts); ?>
+                                    <?php if ($item->attempts >= $item->max_attempts): ?>
+                                        <br><small style="color: red;">Đã hết lần thử</small>
+                                    <?php endif; ?>
+                                </td>
+                                <td><?php echo esc_html(date('d/m/Y H:i:s', strtotime($item->created_at))); ?></td>
+                                <td>
+                                    <?php if ($item->sent_at): ?>
+                                        <?php echo esc_html(date('d/m/Y H:i:s', strtotime($item->sent_at))); ?>
+                                    <?php else: ?>
+                                        <span style="color: #999;">Chưa gửi</span>
+                                    <?php endif; ?>
+                                </td>
+                                <td>
+                                    <?php if ($item->error_message): ?>
+                                        <details>
+                                            <summary style="color: red; cursor: pointer;">Có lỗi</summary>
+                                            <div style="margin-top: 5px; font-size: 12px; background: #f9f9f9; padding: 5px; border-radius: 3px;">
+                                                <?php echo esc_html($item->error_message); ?>
+                                            </div>
+                                        </details>
+                                    <?php else: ?>
+                                        <span style="color: green;">Không có</span>
+                                    <?php endif; ?>
+                                </td>
+                                <td>
+                                    <a href="<?php echo $base_url; ?>&action=retry&queue_id=<?php echo $item->id; ?>" class="button button-small" onclick="return confirm('Bạn có chắc muốn thử lại mục này?')">Thử lại</a>
+                                    <a href="<?php echo $base_url; ?>&action=delete&queue_id=<?php echo $item->id; ?>" class="button button-small" style="color: red;" onclick="return confirm('Bạn có chắc muốn xóa mục này?')">Xóa</a>
+                                </td>
+                            </tr>
+                        <?php endforeach; ?>
+                    <?php endif; ?>
+                </tbody>
+            </table>
+
+            <?php if ($total_pages > 1): ?>
+                <div class="tablenav bottom">
+                    <div class="tablenav-pages">
+                        <span class="displaying-num"><?php echo $total_items; ?> mục</span>
+                        <span class="pagination-links">
+                            <?php if ($paged > 1): ?>
+                                <a class="first-page button" href="<?php echo $base_url; ?>&paged=1">&laquo;</a>
+                                <a class="prev-page button" href="<?php echo $base_url; ?>&paged=<?php echo ($paged - 1); ?>">&lsaquo;</a>
+                            <?php endif; ?>
+
+                            <span class="paging-input">
+                                <input class="current-page" type="text" name="paged" value="<?php echo $paged; ?>" size="2" readonly>
+                                <span class="tablenav-paging-text"> trong <span class="total-pages"><?php echo $total_pages; ?></span></span>
+                            </span>
+
+                            <?php if ($paged < $total_pages): ?>
+                                <a class="next-page button" href="<?php echo $base_url; ?>&paged=<?php echo ($paged + 1); ?>">&rsaquo;</a>
+                                <a class="last-page button" href="<?php echo $base_url; ?>&paged=<?php echo $total_pages; ?>">&raquo;</a>
+                            <?php endif; ?>
+                        </span>
+                    </div>
+                </div>
+            <?php endif; ?>
         </div>
     <?php
     }

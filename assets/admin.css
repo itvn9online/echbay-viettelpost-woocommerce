@@ -284,3 +284,53 @@
         max-width: none;
     }
 }
+
+/* Queue Section Styles */
+.viettelpost-queue-section {
+    margin: 20px 0;
+}
+
+.viettelpost-queue-section .wp-list-table {
+    margin-top: 10px;
+}
+
+.viettelpost-queue-section .status-pending {
+    color: #996600;
+}
+
+.viettelpost-queue-section .status-processing {
+    color: #0073aa;
+}
+
+.viettelpost-queue-section .status-completed {
+    color: #46b450;
+}
+
+.viettelpost-queue-section .status-failed {
+    color: #dc3232;
+}
+
+.viettelpost-queue-section .column-id {
+    width: 60px;
+}
+
+.viettelpost-queue-section .column-order {
+    width: 120px;
+}
+
+.viettelpost-queue-section .column-status {
+    width: 100px;
+}
+
+.viettelpost-queue-section .column-attempts {
+    width: 80px;
+}
+
+.viettelpost-queue-section .column-created,
+.viettelpost-queue-section .column-sent {
+    width: 130px;
+}
+
+.viettelpost-queue-section .column-actions {
+    width: 120px;
+}

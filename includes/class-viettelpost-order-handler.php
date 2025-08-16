@@ -639,9 +639,17 @@ class EchBay_ViettelPost_Order_Handler
              LIMIT 10"
         );
 
+        // giới hạn thời gian cho vòng lặp không quá 55 giây
+        $time_limit = time() + 55;
+
         // 
         $count = 0;
         foreach ($orders as $queue_item) {
+            // Check if we've reached the time limit
+            if (time() > $time_limit) {
+                break;
+            }
+
             // Update status to processing
             $wpdb->update(
                 $table_name,
