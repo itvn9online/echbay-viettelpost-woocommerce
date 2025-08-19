@@ -792,14 +792,14 @@ document.addEventListener('DOMContentLoaded', function() {
             array(
                 'name' => 'Kiểm tra kết nối',
                 'type' => 'viettelpost_test_connection',
-                'desc' => 'Kiểm tra kết nối đến API ViettelPost',
+                'desc' => 'Kiểm tra kết nối đến API ViettelPost. Thực hiện thao tác này mỗi khi Nhập mới hoặc Thay đổi thông tin tài khoản ViettelPost.',
                 'id'   => 'echbay_viettelpost_test_connection'
             ),
 
             array(
                 'name' => 'Đồng bộ địa chỉ',
                 'type' => 'viettelpost_sync_locations',
-                'desc' => 'Đồng bộ danh sách tỉnh/huyện/xã từ ViettelPost',
+                'desc' => 'Đồng bộ danh sách Cửa hàng, Tỉnh/huyện/xã từ ViettelPost',
                 'id'   => 'echbay_viettelpost_sync_locations'
             ),
 
@@ -909,6 +909,10 @@ document.addEventListener('DOMContentLoaded', function() {
             wp_die('Bạn không có quyền thực hiện thao tác này');
         }
 
+        // Xóa token cũ
+        // delete_transient('echbay_viettelpost_token');
+
+        // đăng nhập để lấy token mới
         $api = new EchBay_ViettelPost_API();
         $result = $api->login();
 

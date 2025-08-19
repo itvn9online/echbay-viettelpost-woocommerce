@@ -34,8 +34,8 @@ delete_option('echbay_viettelpost_wards');
 delete_transient('echbay_viettelpost_token');
 
 // Clear scheduled events
-wp_clear_scheduled_hook('echbay_viettelpost_sync_locations');
-wp_clear_scheduled_hook('echbay_viettelpost_update_tracking');
+// wp_clear_scheduled_hook('echbay_viettelpost_sync_locations');
+// wp_clear_scheduled_hook('echbay_viettelpost_update_tracking');
 
 // Delete post meta for all orders (optional - only if user chooses to remove all data)
 global $wpdb;

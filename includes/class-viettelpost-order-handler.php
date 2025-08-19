@@ -46,7 +46,7 @@ class EchBay_ViettelPost_Order_Handler
         add_action('wp_ajax_viettelpost_print_label', array($this, 'ajax_print_label'));
 
         // Scheduled task for tracking updates
-        add_action('echbay_viettelpost_update_tracking', array($this, 'update_tracking_info'));
+        // add_action('echbay_viettelpost_update_tracking', array($this, 'update_tracking_info'));
     }
 
     /**
@@ -105,12 +105,11 @@ class EchBay_ViettelPost_Order_Handler
 
         // Queue the order for creation
         if ($auto_create == 'queue') {
-            $this->add_order_to_queue($order_id);
-            return;
+            return $this->add_order_to_queue($order_id);
         }
 
         // Create ViettelPost order
-        $this->create_viettelpost_order($order_id);
+        return $this->create_viettelpost_order($order_id);
     }
 
     /**
@@ -636,7 +635,7 @@ class EchBay_ViettelPost_Order_Handler
              WHERE status = 'pending' 
              AND attempts < max_attempts 
              ORDER BY created_at ASC 
-             LIMIT 10"
+             LIMIT 20"
         );
 
         // giới hạn thời gian cho vòng lặp không quá 55 giây

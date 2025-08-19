@@ -112,6 +112,11 @@ jQuery(document).ready(function () {
 		initializeLocationDropdowns();
 	}, 100);
 
+	//
+	jQuery(
+		'label[for="echbay_viettelpost_test_connection"], label[for="echbay_viettelpost_sync_locations"]'
+	).removeAttr("for");
+
 	// Test connection button
 	jQuery("#echbay_viettelpost_test_connection").on("click", function (e) {
 		e.preventDefault();
