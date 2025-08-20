@@ -99,6 +99,8 @@ class EchBay_ViettelPost_Settings
      */
     public function documentation_section()
     {
+        // TEST token
+        // echo 'echbay_viettelpost_token: ' . get_transient('echbay_viettelpost_token') . '<br>' . PHP_EOL;
 ?>
         <div class="viettelpost-documentation">
             <h2>Tài liệu hướng dẫn ViettelPost WooCommerce</h2>

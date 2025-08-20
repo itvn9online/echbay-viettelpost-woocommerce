@@ -93,8 +93,8 @@ class EchBay_ViettelPost_API
 
         if (isset($data['status']) && $data['status'] == 200 && isset($data['data']['token'])) {
             $this->token = $data['data']['token'];
-            // Cache token for 23 hours
-            set_transient('echbay_viettelpost_token', $this->token, 23 * HOUR_IN_SECONDS);
+            // Cache token for 11 hours
+            set_transient('echbay_viettelpost_token', $this->token, 11 * HOUR_IN_SECONDS);
             return $this->token;
         }
 
@@ -246,9 +246,19 @@ class EchBay_ViettelPost_API
     public function get_services_id_district($data)
     {
         $default_data = array(
+            "SENDER_DISTRICT" => 0,
+            "SENDER_PROVINCE" => 0,
+            "SENDER_WARD" => 0,
+            "RECEIVER_DISTRICT" => 0,
+            "RECEIVER_PROVINCE" => 0,
+            "RECEIVER_WARD" => 0,
+            "PRODUCT_TYPE" => "HH",
             'PRODUCT_WEIGHT' => 1000, // gram
-            'PRODUCT_PRICE' => 0,
-            'MONEY_COLLECTION' => 0,
+            "PRODUCT_PRICE" => 0,
+            "MONEY_COLLECTION" => "0",
+            "PRODUCT_LENGTH" => 0,
+            "PRODUCT_WIDTH" => 0,
+            "PRODUCT_HEIGHT" => 0,
             /**
              * Loại bảng giá
              * 0: Bảng giá quốc tế
@@ -256,10 +266,13 @@ class EchBay_ViettelPost_API
              */
             'TYPE' => 1,
         );
+        foreach ($data as $key => $value) {
+            if (isset($default_data[$key])) {
+                $default_data[$key] = $value;
+            }
+        }
 
-        $data = wp_parse_args($data, $default_data);
-
-        return $this->make_request('/order/getPriceAll', 'POST', $data);
+        return $this->make_request('/order/getPriceAll', 'POST', $default_data);
     }
 
     /**

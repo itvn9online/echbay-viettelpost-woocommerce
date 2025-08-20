@@ -148,9 +148,9 @@ class EchBay_ViettelPost_Order_Handler
         // echo '<pre>' . print_r($order_data, true) . '</pre>';
         if (empty($order_data['ORDER_SERVICE'])) {
             $order->add_order_note(
-                'Lỗi tạo vận đơn ViettelPost (' . __LINE__ . '): Thiếu thông tin dịch vụ vận chuyển data.ORDER_SERVICE'
+                'Lỗi tạo vận đơn ViettelPost (' . __LINE__ . '): Thiếu thông tin dịch vụ vận chuyển ORDER_SERVICE'
             );
-            return new WP_Error('missing_order_service', 'Thiếu thông tin dịch vụ vận chuyển data.ORDER_SERVICE');
+            return new WP_Error('missing_order_service', 'Thiếu thông tin dịch vụ vận chuyển ORDER_SERVICE');
         }
         // die(__FILE__ . ':' . __LINE__);
         $result = $api->create_order($order_data);
