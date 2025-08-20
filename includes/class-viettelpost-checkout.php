@@ -411,6 +411,7 @@ class EchBay_ViettelPost_Checkout
 
         $provinces = get_option('echbay_viettelpost_provinces', array());
         // print_r($provinces);
+
         foreach ($provinces as $province) {
             if ($province['PROVINCE_ID'] == $province_id) {
                 return $province['PROVINCE_NAME'];
@@ -430,6 +431,20 @@ class EchBay_ViettelPost_Checkout
         }
 
         $districts = get_option('echbay_viettelpost_districts_' . $province_id, array());
+
+        if (empty($districts)) {
+            // If not cached, get from API
+            $api = new EchBay_ViettelPost_API();
+            $result = $api->get_districts($province_id);
+            if (is_wp_error($result)) {
+                // lưu error log
+                error_log($result->get_error_message());
+            } elseif (isset($result['data'])) {
+                $districts = $result['data'];
+                // Cache for future use
+                update_option('echbay_viettelpost_districts_' . $province_id, $districts);
+            }
+        }
 
         foreach ($districts as $district) {
             if ($district['DISTRICT_ID'] == $district_id) {
@@ -451,6 +466,20 @@ class EchBay_ViettelPost_Checkout
 
         $wards = get_option('echbay_viettelpost_wards_' . $district_id, array());
 
+        if (empty($wards)) {
+            // If not cached, get from API
+            $api = new EchBay_ViettelPost_API();
+            $result = $api->get_wards($district_id);
+            if (is_wp_error($result)) {
+                // lưu error log
+                error_log($result->get_error_message());
+            } elseif (isset($result['data'])) {
+                $wards = $result['data'];
+                // Cache for future use
+                update_option('echbay_viettelpost_wards_' . $district_id, $wards);
+            }
+        }
+
         foreach ($wards as $ward) {
             if ($ward['WARDS_ID'] == $ward_id) {
                 return $ward['WARDS_NAME'];
@@ -464,7 +493,14 @@ class EchBay_ViettelPost_Checkout
     {
         if ($type == 'billing' || $type == 'shipping') {
             // echo $type . '<br>' . PHP_EOL;
-            // echo '<pre>' . print_r($value, true) . '</pre>';
+            if (
+                1 > 2
+                && isset($_GET['page']) && $_GET['page'] == 'wc-orders'
+                && isset($_GET['action']) && $_GET['action'] == 'edit'
+                && isset($_GET['id']) && is_numeric($_GET['id'])
+            ) {
+                echo '<pre>' . print_r($value, true) . '</pre>';
+            }
             // die(__FILE__ . ':' . __LINE__);
             if (isset($value['state'])) {
                 // Get city name
@@ -481,7 +517,8 @@ class EchBay_ViettelPost_Checkout
                 $value['state'] = $this->get_province_name($value['state']);
                 // echo $value['state'] . '<br>' . PHP_EOL;
                 // die(__FUNCTION__ . ':' . __LINE__);
-                // $value['country'] = '';
+                // đặt country = '' thì mới tính toán được tỉnh thành VN
+                $value['country'] = '';
             }
         }
         return $value;

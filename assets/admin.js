@@ -249,4 +249,19 @@ jQuery(document).ready(function () {
 
 	// Collapse all sections by default except first one
 	jQuery(".viettelpost-docs-section:not(:first)").addClass("collapsed");
+
+	// thêm nút bấm show/hide vào sau #echbay_viettelpost_password, khi bấm nút này sẽ toggle class "active"
+	jQuery("#echbay_viettelpost_password").after(
+		' <button type="button" class="button cur toggle-viettelpost-password">Show</button>'
+	);
+	jQuery(document).on("click", ".toggle-viettelpost-password", function () {
+		var $passwordField = jQuery("#echbay_viettelpost_password");
+		if ($passwordField.hasClass("active")) {
+			$passwordField.removeClass("active");
+			jQuery(this).text("Show");
+		} else {
+			$passwordField.addClass("active");
+			jQuery(this).text("Hide");
+		}
+	});
 });

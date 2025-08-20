@@ -146,6 +146,12 @@ class EchBay_ViettelPost_Order_Handler
         $api = new EchBay_ViettelPost_API();
         $order_data = $api->get_order_service($order_data);
         // echo '<pre>' . print_r($order_data, true) . '</pre>';
+        if (empty($order_data['ORDER_SERVICE'])) {
+            $order->add_order_note(
+                'Lỗi tạo vận đơn ViettelPost (' . __LINE__ . '): Thiếu thông tin dịch vụ vận chuyển data.ORDER_SERVICE'
+            );
+            return new WP_Error('missing_order_service', 'Thiếu thông tin dịch vụ vận chuyển data.ORDER_SERVICE');
+        }
         // die(__FILE__ . ':' . __LINE__);
         $result = $api->create_order($order_data);
         // var_dump($result);
@@ -153,9 +159,9 @@ class EchBay_ViettelPost_Order_Handler
         // die(__FILE__ . ':' . __LINE__);
 
         if (is_wp_error($result)) {
-            file_put_contents(__DIR__ . '/' . basename(__FILE__, '.php') . '.error_log', print_r($result, true));
+            file_put_contents(__DIR__ . '/' . basename(__FILE__, '.php') . '.error_log', $_SERVER['REQUEST_URI'] . PHP_EOL . print_r($order_data, true) . print_r($result, true), LOCK_EX);
             $order->add_order_note(
-                sprintf('Lỗi tạo vận đơn ViettelPost: %s', $result->get_error_message())
+                'Lỗi tạo vận đơn ViettelPost (' . __LINE__ . '): ' . $result->get_error_message()
             );
             return $result;
         }
@@ -184,9 +190,11 @@ class EchBay_ViettelPost_Order_Handler
             return $order_number;
         }
 
+        // Log error details
+        file_put_contents(__DIR__ . '/' . basename(__FILE__, '.php') . '.error_log', $_SERVER['REQUEST_URI'] . PHP_EOL . print_r($order_data, true) . print_r($result, true), LOCK_EX);
         $error_message = isset($result['message']) ? $result['message'] : 'Không thể tạo vận đơn';
         $order->add_order_note(
-            sprintf('Lỗi tạo vận đơn ViettelPost: %s', $error_message)
+            'Lỗi tạo vận đơn ViettelPost (' . __LINE__ . '): ' . $error_message
         );
 
         return new WP_Error('create_order_failed', $error_message);

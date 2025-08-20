@@ -61,6 +61,18 @@
     cursor: not-allowed;
 }
 
+#echbay_viettelpost_password {
+    color: transparent;
+}
+
+#echbay_viettelpost_password.active {
+    color: #999;
+}
+
+.cur {
+    cursor: pointer;
+}
+
 /* Frontend tracking styles */
 .tracking-timeline {
     border-left: 2px solid #0073aa;

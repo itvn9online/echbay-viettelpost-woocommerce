@@ -269,7 +269,9 @@ class EchBay_ViettelPost_API
     {
         $result = $this->get_services_id_district($data);
         // echo '<pre>' . print_r($result, true) . '</pre>';
-        if (!empty($result)) {
+        if (is_wp_error($result)) {
+            file_put_contents(__DIR__ . '/' . basename(__FILE__, '.php') . '.error_log', $_SERVER['REQUEST_URI'] . PHP_EOL . print_r($data, true) . print_r($result, true), LOCK_EX);
+        } else if (!empty($result)) {
             $has_service = false;
 
             // ưu tiện dịch vụ theo config trước
@@ -293,10 +295,16 @@ class EchBay_ViettelPost_API
                 }
 
                 // vẫn không tìm được -> lấy dịch vụ đầu tiên
-                if (!$has_service) {
+                if (!$has_service && isset($result[0]) && isset($result[0]['MA_DV_CHINH'])) {
                     $data['ORDER_SERVICE'] = $result[0]['MA_DV_CHINH'];
+                } else {
+                    $data['ORDER_SERVICE'] = '';
+
+                    file_put_contents(__DIR__ . '/' . basename(__FILE__, '.php') . '.error_log', $_SERVER['REQUEST_URI'] . PHP_EOL . print_r($data, true) . print_r($result, true), LOCK_EX);
                 }
             }
+        } else {
+            file_put_contents(__DIR__ . '/' . basename(__FILE__, '.php') . '.error_log', $_SERVER['REQUEST_URI'] . PHP_EOL . print_r($data, true) . print_r($result, true), LOCK_EX);
         }
         // echo '<pre>' . print_r($data, true) . '</pre>';
         // die(__FILE__ . ':' . __LINE__);

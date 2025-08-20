@@ -598,7 +598,7 @@ document.addEventListener('DOMContentLoaded', function() {
 
             array(
                 'name' => 'Mật khẩu',
-                'type' => 'password',
+                'type' => 'text',
                 'desc' => 'Mật khẩu tài khoản ViettelPost Partner',
                 'id'   => 'echbay_viettelpost_password',
                 'default' => ''
