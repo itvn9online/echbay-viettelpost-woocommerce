@@ -30,7 +30,7 @@ add_action('before_woocommerce_init', function () {
 });
 
 // Define plugin constants
-define('ECHBAY_VIETTELPOST_VERSION', '1.3.6');
+define('ECHBAY_VIETTELPOST_VERSION', file_get_contents(__DIR__ . '/VERSION'));
 define('ECHBAY_VIETTELPOST_DEBUG', strpos($_SERVER['HTTP_HOST'], 'demo.') !== false ? date('ymd.His') : ECHBAY_VIETTELPOST_VERSION);
 define('ECHBAY_VIETTELPOST_PLUGIN_URL', plugin_dir_url(__FILE__));
 define('ECHBAY_VIETTELPOST_PLUGIN_PATH', __DIR__ . '/');
