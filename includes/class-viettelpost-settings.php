@@ -40,6 +40,12 @@ class EchBay_ViettelPost_Settings
         // Add custom field types for WooCommerce settings
         add_action('woocommerce_admin_field_viettelpost_test_connection', array($this, 'output_test_connection_field'));
         add_action('woocommerce_admin_field_viettelpost_sync_locations', array($this, 'output_sync_locations_field'));
+
+        // Admin address field customization
+        add_action('woocommerce_admin_order_data_after_billing_address', array($this, 'admin_billing_address_scripts'));
+        add_action('woocommerce_admin_order_data_after_shipping_address', array($this, 'admin_shipping_address_scripts'));
+        add_action('wp_ajax_viettelpost_get_admin_districts', array($this, 'get_admin_districts_ajax'));
+        add_action('wp_ajax_viettelpost_get_admin_wards', array($this, 'get_admin_wards_ajax'));
     }
 
     /**
@@ -1094,35 +1100,50 @@ document.addEventListener('DOMContentLoaded', function() {
      */
     public function admin_scripts($hook)
     {
-        if ($hook !== 'woocommerce_page_wc-settings') {
-            return;
+        // For settings page
+        if ($hook === 'woocommerce_page_wc-settings') {
+            // Enqueue admin CSS
+            wp_enqueue_style(
+                'echbay-viettelpost-admin',
+                ECHBAY_VIETTELPOST_PLUGIN_URL . 'assets/admin.css',
+                array(),
+                ECHBAY_VIETTELPOST_DEBUG
+            );
+
+            // Enqueue admin JS
+            wp_enqueue_script(
+                'echbay-viettelpost-admin',
+                ECHBAY_VIETTELPOST_PLUGIN_URL . 'assets/admin.js',
+                array('jquery'),
+                ECHBAY_VIETTELPOST_DEBUG,
+                true
+            );
+
+            wp_localize_script('echbay-viettelpost-admin', 'echbay_viettelpost_ajax', array(
+                'ajax_url' => admin_url('admin-ajax.php'),
+                'nonce' => wp_create_nonce('echbay_viettelpost_ajax'),
+                'messages' => array(
+                    'testing' => 'Đang kiểm tra...',
+                    'syncing' => 'Đang đồng bộ...'
+                )
+            ));
         }
 
-        // Enqueue admin CSS
-        wp_enqueue_style(
-            'echbay-viettelpost-admin',
-            ECHBAY_VIETTELPOST_PLUGIN_URL . 'assets/admin.css',
-            array(),
-            ECHBAY_VIETTELPOST_DEBUG
-        );
+        // For order edit page - check if customization is enabled
+        if (($hook === 'post.php' || $hook === 'post-new.php') &&
+            isset($_GET['post']) &&
+            get_post_type($_GET['post']) === 'shop_order' &&
+            get_option('echbay_viettelpost_customize_checkout') === 'yes'
+        ) {
 
-        // Enqueue admin JS
-        wp_enqueue_script(
-            'echbay-viettelpost-admin',
-            ECHBAY_VIETTELPOST_PLUGIN_URL . 'assets/admin.js',
-            array('jquery'),
-            ECHBAY_VIETTELPOST_DEBUG,
-            true
-        );
-
-        wp_localize_script('echbay-viettelpost-admin', 'echbay_viettelpost_ajax', array(
-            'ajax_url' => admin_url('admin-ajax.php'),
-            'nonce' => wp_create_nonce('echbay_viettelpost_ajax'),
-            'messages' => array(
-                'testing' => 'Đang kiểm tra...',
-                'syncing' => 'Đang đồng bộ...'
-            )
-        ));
+            // Enqueue admin CSS for order page
+            wp_enqueue_style(
+                'echbay-viettelpost-admin',
+                ECHBAY_VIETTELPOST_PLUGIN_URL . 'assets/admin.css',
+                array(),
+                ECHBAY_VIETTELPOST_DEBUG
+            );
+        }
     }
 
     /**
@@ -1299,7 +1320,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 });
             </script>
         </div>
-<?php
+        <?php
     }
 
     /**
@@ -1319,5 +1340,366 @@ document.addEventListener('DOMContentLoaded', function() {
         }
 
         return trim(wp_remote_retrieve_body($response));
+    }
+
+    /**
+     * Add scripts for billing address customization
+     */
+    public function admin_billing_address_scripts($order)
+    {
+        // Only add scripts if customization is enabled
+        if (get_option('echbay_viettelpost_customize_checkout') !== 'yes') {
+            return;
+        }
+
+        $this->output_admin_address_scripts('billing', $order);
+    }
+
+    /**
+     * Add scripts for shipping address customization
+     */
+    public function admin_shipping_address_scripts($order)
+    {
+        // Only add scripts if customization is enabled
+        if (get_option('echbay_viettelpost_customize_checkout') !== 'yes') {
+            return;
+        }
+
+        $this->output_admin_address_scripts('shipping', $order);
+    }
+
+    /**
+     * Output admin address customization scripts
+     */
+    private function output_admin_address_scripts($type, $order)
+    {
+        static $script_added = false;
+
+        // Add the script only once
+        if (!$script_added) {
+        ?>
+            <script type="text/javascript">
+                // không cho load Districts load liên tục
+                let districts_is_loading = false;
+
+                // không cho load Wards load liên tục
+                let wards_is_loading = false;
+
+                jQuery(document).ready(function($) {
+                    // Store original input fields
+                    var originalInputs = {};
+
+                    function initAddressCustomization() {
+                        // Initialize both billing and shipping
+                        initAddressType('billing');
+                        initAddressType('shipping');
+                    }
+
+                    function initAddressType(addressType) {
+                        var stateField = $('#_' + addressType + '_state');
+                        var cityField = $('#_' + addressType + '_city');
+                        var address2Field = $('#_' + addressType + '_address_2');
+
+                        // Convert city field to select
+                        convertCityToSelect(addressType, stateField, cityField);
+
+                        // Convert address_2 field to select
+                        convertAddress2ToSelect(addressType, cityField, address2Field);
+
+                        // Handle state change
+                        stateField.on('change', function() {
+                            var stateId = $(this).val();
+                            if (stateId) {
+                                loadDistricts(addressType, stateId);
+                            } else {
+                                resetCityField(addressType);
+                            }
+                        });
+
+                        // Handle city change
+                        $(document).on('change', '#_' + addressType + '_city_select', function() {
+                            var cityId = $(this).val();
+                            if (cityId) {
+                                // Update hidden city field
+                                $('#_' + addressType + '_city').val(cityId);
+                                loadWards(addressType, cityId);
+                            } else {
+                                resetAddress2Field(addressType);
+                            }
+                        });
+
+                        // Handle address_2 change
+                        $(document).on('change', '#_' + addressType + '_address_2_select', function() {
+                            var wardId = $(this).val();
+                            // Update hidden address_2 field
+                            $('#_' + addressType + '_address_2').val(wardId);
+                        });
+                    }
+
+                    function convertCityToSelect(addressType, stateField, cityField) {
+                        if (cityField.length && !cityField.next().hasClass('vtp-select-wrapper')) {
+                            // Get state ID
+                            var stateId = stateField.val();
+                            // nếu stateId không phải dạng số nguyên thì bỏ qua
+                            if (!/^\d+$/.test(stateId)) {
+                                return;
+                            }
+
+                            // Store original value
+                            originalInputs[addressType + '_city'] = cityField.val();
+
+                            // Hide original input
+                            cityField.hide();
+
+                            // Create select element
+                            var selectHtml = '<div class="vtp-select-wrapper">' +
+                                '<select id="_' + addressType + '_city_select" name="_' + addressType + '_city_select" class="select short">' +
+                                '<option value="">Chọn quận/huyện</option>' +
+                                '</select></div>';
+
+                            cityField.after(selectHtml);
+
+                            // Load districts if state is already selected
+                            loadDistricts(addressType, stateId);
+                        }
+                    }
+
+                    function convertAddress2ToSelect(addressType, cityField, address2Field) {
+                        if (address2Field.length && !address2Field.next().hasClass('vtp-select-wrapper')) {
+                            // Get city ID
+                            var cityId = cityField.val();
+                            // nếu cityId không phải dạng số nguyên thì bỏ qua
+                            if (!/^\d+$/.test(cityId)) {
+                                return;
+                            }
+
+                            // Store original value
+                            originalInputs[addressType + '_address_2'] = address2Field.val();
+
+                            // Hide original input
+                            address2Field.hide();
+
+                            // Create select element
+                            var selectHtml = '<div class="vtp-select-wrapper">' +
+                                '<select id="_' + addressType + '_address_2_select" name="_' + addressType + '_address_2_select" class="select short">' +
+                                '<option value="">Chọn phường/xã</option>' +
+                                '</select></div>';
+
+                            address2Field.after(selectHtml);
+
+                            // Load wards if city is already selected
+                            loadWards(addressType, cityId);
+                        }
+                    }
+
+                    function loadDistricts(addressType, stateId) {
+                        // Check if districts are already loading
+                        if (districts_is_loading !== false || districts_is_loading == stateId) {
+                            // console.log('Districts are already loading for state ID:', stateId);
+                            return;
+                        }
+                        // Set loading state
+                        districts_is_loading = stateId;
+
+                        // Show loading message
+                        var select = $('#_' + addressType + '_city_select');
+                        select.html('<option value="">Đang tải...</option>');
+
+                        $.ajax({
+                            url: ajaxurl,
+                            type: 'POST',
+                            data: {
+                                action: 'viettelpost_get_admin_districts',
+                                province_id: stateId,
+                                nonce: '<?php echo wp_create_nonce('viettelpost_admin_ajax'); ?>'
+                            },
+                            success: function(response) {
+                                // Reset loading state
+                                districts_is_loading = false;
+
+                                // Populate districts
+                                if (response.success) {
+                                    var options = '<option value="">Chọn quận/huyện</option>';
+                                    $.each(response.data, function(index, district) {
+                                        var selected = (district.DISTRICT_ID == originalInputs[addressType + '_city']) ? ' selected' : '';
+                                        options += '<option value="' + district.DISTRICT_ID + '"' + selected + '>' + district.DISTRICT_NAME + '</option>';
+                                    });
+                                    select.html(options);
+
+                                    // Trigger change if there's a selected value
+                                    if (originalInputs[addressType + '_city']) {
+                                        select.trigger('change');
+                                    }
+                                } else {
+                                    select.html('<option value="">Lỗi tải dữ liệu</option>');
+                                }
+                            },
+                            error: function() {
+                                select.html('<option value="">Lỗi kết nối</option>');
+                            }
+                        });
+                    }
+
+                    function loadWards(addressType, cityId) {
+                        // Check if wards are already loading
+                        if (wards_is_loading !== false || wards_is_loading == cityId) {
+                            // console.log('Wards are already loading for city ID:', cityId);
+                            return;
+                        }
+                        // Set loading state
+                        wards_is_loading = cityId;
+
+                        // Show loading message
+                        var select = $('#_' + addressType + '_address_2_select');
+                        select.html('<option value="">Đang tải...</option>');
+
+                        $.ajax({
+                            url: ajaxurl,
+                            type: 'POST',
+                            data: {
+                                action: 'viettelpost_get_admin_wards',
+                                district_id: cityId,
+                                nonce: '<?php echo wp_create_nonce('viettelpost_admin_ajax'); ?>'
+                            },
+                            success: function(response) {
+                                // Reset loading state
+                                wards_is_loading = false;
+
+                                // Check if wards are already loading
+                                if (response.success) {
+                                    var options = '<option value="">Chọn phường/xã</option>';
+                                    $.each(response.data, function(index, ward) {
+                                        var selected = (ward.WARDS_ID == originalInputs[addressType + '_address_2']) ? ' selected' : '';
+                                        options += '<option value="' + ward.WARDS_ID + '"' + selected + '>' + ward.WARDS_NAME + '</option>';
+                                    });
+                                    select.html(options);
+                                } else {
+                                    select.html('<option value="">Lỗi tải dữ liệu</option>');
+                                }
+                            },
+                            error: function() {
+                                select.html('<option value="">Lỗi kết nối</option>');
+                            }
+                        });
+                    }
+
+                    function resetCityField(addressType) {
+                        var select = $('#_' + addressType + '_city_select');
+                        select.html('<option value="">Chọn quận/huyện</option>');
+                        resetAddress2Field(addressType);
+                    }
+
+                    function resetAddress2Field(addressType) {
+                        var select = $('#_' + addressType + '_address_2_select');
+                        select.html('<option value="">Chọn phường/xã</option>');
+                    }
+
+                    // Initialize when page loads
+                    initAddressCustomization();
+
+                    // Re-initialize when order data is refreshed (if applicable)
+                    $(document).ajaxComplete(function(event, xhr, settings) {
+                        if (settings.url && settings.url.indexOf('admin-ajax.php') !== -1) {
+                            setTimeout(initAddressCustomization, 500);
+                        }
+                    });
+                });
+            </script>
+
+            <style>
+                .vtp-select-wrapper {
+                    margin-top: 5px;
+                }
+
+                .vtp-select-wrapper select {
+                    width: 100%;
+                    max-width: 300px;
+                }
+            </style>
+<?php
+            $script_added = true;
+        }
+    }
+
+    /**
+     * Get districts for admin via AJAX
+     */
+    public function get_admin_districts_ajax()
+    {
+        if (!wp_verify_nonce($_POST['nonce'], 'viettelpost_admin_ajax')) {
+            wp_send_json_error('Nonce verification failed');
+        }
+
+        if (!current_user_can('edit_shop_orders')) {
+            wp_send_json_error('Insufficient permissions');
+        }
+
+        $province_id = intval($_POST['province_id']);
+
+        if (!$province_id) {
+            wp_send_json_error('ID tỉnh không hợp lệ');
+        }
+
+        // Get districts from cache first
+        $districts = get_option('echbay_viettelpost_districts_' . $province_id, array());
+
+        if (empty($districts)) {
+            // If not in cache, try to get from API
+            $api = new EchBay_ViettelPost_API();
+            $result = $api->get_districts($province_id);
+
+            if (is_wp_error($result)) {
+                wp_send_json_error($result->get_error_message());
+            } elseif (isset($result['data'])) {
+                $districts = $result['data'];
+                // Save to cache
+                update_option('echbay_viettelpost_districts_' . $province_id, $districts);
+            } else {
+                wp_send_json_error('Không thể lấy danh sách quận/huyện');
+            }
+        }
+
+        wp_send_json_success($districts);
+    }
+
+    /**
+     * Get wards for admin via AJAX
+     */
+    public function get_admin_wards_ajax()
+    {
+        if (!wp_verify_nonce($_POST['nonce'], 'viettelpost_admin_ajax')) {
+            wp_send_json_error('Nonce verification failed');
+        }
+
+        if (!current_user_can('edit_shop_orders')) {
+            wp_send_json_error('Insufficient permissions');
+        }
+
+        $district_id = intval($_POST['district_id']);
+
+        if (!$district_id) {
+            wp_send_json_error('ID quận/huyện không hợp lệ');
+        }
+
+        // Get wards from cache first
+        $wards = get_option('echbay_viettelpost_wards_' . $district_id, array());
+
+        if (empty($wards)) {
+            // If not in cache, try to get from API
+            $api = new EchBay_ViettelPost_API();
+            $result = $api->get_wards($district_id);
+
+            if (is_wp_error($result)) {
+                wp_send_json_error($result->get_error_message());
+            } elseif (isset($result['data'])) {
+                $wards = $result['data'];
+                // Save to cache
+                update_option('echbay_viettelpost_wards_' . $district_id, $wards);
+            } else {
+                wp_send_json_error('Không thể lấy danh sách phường/xã');
+            }
+        }
+
+        wp_send_json_success($wards);
     }
 }

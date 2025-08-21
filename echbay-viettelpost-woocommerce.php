@@ -4,7 +4,7 @@
  * Plugin Name: EchBay ViettelPost WooCommerce
  * Plugin URI: https://echbay.com
  * Description: Tích hợp API ViettelPost với WooCommerce để tự động tạo vận đơn, tính phí vận chuyển và theo dõi đơn hàng.
- * Version: 1.3.7
+ * Version: 1.3.8
  * Author: EchBay
  * Author URI: https://echbay.com
  * Requires at least: 5.8
