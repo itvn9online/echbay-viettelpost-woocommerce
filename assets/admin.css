@@ -346,3 +346,95 @@
 .viettelpost-queue-section .column-actions {
     width: 120px;
 }
+
+/* Update section styles */
+.viettelpost-update-section {
+    max-width: 1000px;
+}
+
+.viettelpost-update-container {
+    background: #fff;
+    border: 1px solid #c3c4c7;
+    border-radius: 4px;
+    margin: 20px 0;
+}
+
+.viettelpost-update-info,
+.viettelpost-update-actions,
+.viettelpost-update-changelog {
+    padding: 20px;
+    border-bottom: 1px solid #f0f0f1;
+}
+
+.viettelpost-update-changelog {
+    border-bottom: none;
+}
+
+.viettelpost-update-info h3,
+.viettelpost-update-actions h3,
+.viettelpost-update-changelog h3 {
+    margin-top: 0;
+    color: #1d2327;
+}
+
+.viettelpost-update-info .form-table {
+    margin: 0;
+}
+
+.viettelpost-update-info .form-table th {
+    width: 200px;
+    padding: 10px 0;
+    font-weight: 600;
+}
+
+.viettelpost-update-info .form-table td {
+    padding: 10px 0;
+}
+
+.viettelpost-update-actions {
+    background: #f9f9f9;
+}
+
+.viettelpost-update-actions p {
+    margin: 10px 0;
+}
+
+#echbay-viettelpost-update-btn {
+    font-size: 14px;
+    height: auto;
+    padding: 12px 24px;
+    margin: 10px 0;
+}
+
+#echbay-viettelpost-update-progress {
+    background: #fff;
+    border: 1px solid #c3c4c7;
+    border-radius: 4px;
+    padding: 15px;
+}
+
+.update-progress-bar {
+    position: relative;
+    overflow: hidden;
+}
+
+.update-progress-fill {
+    transition: width 0.5s ease;
+}
+
+.viettelpost-update-changelog ul,
+.viettelpost-update-changelog ol {
+    margin: 10px 0 10px 20px;
+}
+
+.viettelpost-update-changelog li {
+    margin: 5px 0;
+}
+
+.viettelpost-update-changelog code {
+    background: #f0f0f1;
+    padding: 2px 6px;
+    border-radius: 3px;
+    font-size: 12px;
+    word-break: break-all;
+}

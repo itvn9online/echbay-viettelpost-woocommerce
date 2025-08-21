@@ -4,7 +4,7 @@
  * Plugin Name: EchBay ViettelPost WooCommerce
  * Plugin URI: https://echbay.com
  * Description: Tích hợp API ViettelPost với WooCommerce để tự động tạo vận đơn, tính phí vận chuyển và theo dõi đơn hàng.
- * Version: 1.3.6
+ * Version: 1.3.7
  * Author: EchBay
  * Author URI: https://echbay.com
  * Requires at least: 5.8
@@ -88,6 +88,10 @@ class EchBay_ViettelPost_WooCommerce
 
         // Add settings link to plugin list
         add_filter('plugin_action_links_' . ECHBAY_VIETTELPOST_PLUGIN_BASENAME, array($this, 'plugin_action_links'));
+
+        // Plugin update functionality
+        add_action('admin_notices', array($this, 'check_for_updates_notice'));
+        add_action('wp_ajax_echbay_viettelpost_update', array($this, 'handle_plugin_update'));
 
         // Check if WooCommerce is active
         if (!$this->is_woocommerce_active()) {
@@ -238,6 +242,231 @@ class EchBay_ViettelPost_WooCommerce
     {
         // Plugin deactivated - queue table will remain for data integrity
         // You can manually drop the table if needed
+    }
+
+    /**
+     * Check for plugin updates and show notice
+     */
+    public function check_for_updates_notice()
+    {
+        // Only show on admin pages
+        if (!is_admin()) {
+            return;
+        }
+
+        // Check if we should show the notice (once per day)
+        $last_check = get_option('echbay_viettelpost_last_update_check', 0);
+        if (time() - $last_check < DAY_IN_SECONDS) {
+            return;
+        }
+
+        $remote_version = $this->get_remote_version();
+        if ($remote_version && version_compare(ECHBAY_VIETTELPOST_VERSION, $remote_version, '<')) {
+            echo '<div class="notice notice-info is-dismissible">
+                <p><strong>EchBay ViettelPost:</strong> Có phiên bản mới <strong>' . esc_html($remote_version) . '</strong> (hiện tại: ' . esc_html(ECHBAY_VIETTELPOST_VERSION) . '). 
+                <button type="button" class="button button-primary" onclick="echbayViettelpostUpdate()">Cập nhật ngay</button>
+                <span id="echbay-viettelpost-update-status"></span>
+                </p>
+            </div>';
+
+            // Add JavaScript for update functionality
+            echo '<script>
+                function echbayViettelpostUpdate() {
+                    var statusEl = document.getElementById("echbay-viettelpost-update-status");
+                    statusEl.innerHTML = "Đang cập nhật...";
+                    
+                    var xhr = new XMLHttpRequest();
+                    xhr.open("POST", ajaxurl, true);
+                    xhr.setRequestHeader("Content-Type", "application/x-www-form-urlencoded");
+                    
+                    xhr.onreadystatechange = function() {
+                        if (xhr.readyState === 4) {
+                            if (xhr.status === 200) {
+                                var response = JSON.parse(xhr.responseText);
+                                if (response.success) {
+                                    statusEl.innerHTML = "Cập nhật thành công! Đang tải lại trang...";
+                                    setTimeout(function() {
+                                        window.location.reload();
+                                    }, 2000);
+                                } else {
+                                    statusEl.innerHTML = "Lỗi: " + response.data;
+                                }
+                            } else {
+                                statusEl.innerHTML = "Lỗi kết nối";
+                            }
+                        }
+                    };
+                    
+                    xhr.send("action=echbay_viettelpost_update&_wpnonce=' . wp_create_nonce('echbay_viettelpost_update') . '");
+                }
+            </script>';
+        }
+
+        // Update last check time
+        update_option('echbay_viettelpost_last_update_check', time());
+    }
+
+    /**
+     * Get remote version from GitHub
+     */
+    private function get_remote_version()
+    {
+        $response = wp_remote_get('https://github.com/itvn9online/echbay-viettelpost-woocommerce/raw/refs/heads/main/VERSION', array(
+            'timeout' => 10,
+            'headers' => array(
+                'User-Agent' => 'EchBay-ViettelPost-Plugin/' . ECHBAY_VIETTELPOST_VERSION
+            )
+        ));
+
+        if (is_wp_error($response) || wp_remote_retrieve_response_code($response) !== 200) {
+            return false;
+        }
+
+        return trim(wp_remote_retrieve_body($response));
+    }
+
+    /**
+     * Handle plugin update AJAX request
+     */
+    public function handle_plugin_update()
+    {
+        // Verify nonce
+        if (!wp_verify_nonce($_POST['_wpnonce'], 'echbay_viettelpost_update')) {
+            wp_die(json_encode(array('success' => false, 'data' => 'Nonce verification failed')));
+        }
+
+        // Check user permissions
+        if (!current_user_can('update_plugins')) {
+            wp_die(json_encode(array('success' => false, 'data' => 'Insufficient permissions')));
+        }
+
+        try {
+            $result = $this->perform_plugin_update();
+            wp_die(json_encode(array('success' => $result['success'], 'data' => $result['message'])));
+        } catch (Exception $e) {
+            wp_die(json_encode(array('success' => false, 'data' => $e->getMessage())));
+        }
+    }
+
+    /**
+     * Perform the actual plugin update
+     */
+    private function perform_plugin_update()
+    {
+        // Check remote version again
+        $remote_version = $this->get_remote_version();
+        if (!$remote_version) {
+            return array('success' => false, 'message' => 'Không thể kiểm tra phiên bản mới');
+        }
+
+        if (!version_compare(ECHBAY_VIETTELPOST_VERSION, $remote_version, '<')) {
+            return array('success' => false, 'message' => 'Plugin đã là phiên bản mới nhất');
+        }
+
+        // Download the zip file
+        $zip_url = 'https://github.com/itvn9online/echbay-viettelpost-woocommerce/archive/refs/heads/main.zip';
+        $temp_file = download_url($zip_url);
+
+        if (is_wp_error($temp_file)) {
+            return array('success' => false, 'message' => 'Không thể tải file: ' . $temp_file->get_error_message());
+        }
+
+        // Extract the zip file
+        $temp_dir = wp_upload_dir()['basedir'] . '/echbay-viettelpost-temp-' . time();
+        $unzip_result = unzip_file($temp_file, $temp_dir);
+
+        if (is_wp_error($unzip_result)) {
+            unlink($temp_file);
+            return array('success' => false, 'message' => 'Không thể giải nén file: ' . $unzip_result->get_error_message());
+        }
+
+        // Find the extracted plugin directory
+        $extracted_plugin_dir = $temp_dir . '/echbay-viettelpost-woocommerce-main';
+        if (!is_dir($extracted_plugin_dir)) {
+            unlink($temp_file);
+            $this->remove_directory($temp_dir);
+            return array('success' => false, 'message' => 'Không tìm thấy thư mục plugin trong file tải về');
+        }
+
+        // Backup current plugin (optional)
+        $plugin_dir = ECHBAY_VIETTELPOST_PLUGIN_PATH;
+        $backup_dir = $plugin_dir . '_backup_' . time();
+        rename($plugin_dir, $backup_dir);
+
+        // Copy new plugin files
+        $copy_result = $this->copy_directory($extracted_plugin_dir, $plugin_dir);
+
+        if (!$copy_result) {
+            // Restore backup if copy failed
+            rename($backup_dir, $plugin_dir);
+            unlink($temp_file);
+            $this->remove_directory($temp_dir);
+            return array('success' => false, 'message' => 'Không thể sao chép file plugin mới');
+        }
+
+        // Clean up
+        unlink($temp_file);
+        $this->remove_directory($temp_dir);
+        $this->remove_directory($backup_dir); // Remove backup after successful update
+
+        return array('success' => true, 'message' => 'Cập nhật plugin thành công');
+    }
+
+    /**
+     * Recursively copy directory
+     */
+    private function copy_directory($source, $destination)
+    {
+        if (!is_dir($source)) {
+            return false;
+        }
+
+        if (!is_dir($destination)) {
+            wp_mkdir_p($destination);
+        }
+
+        $iterator = new RecursiveIteratorIterator(
+            new RecursiveDirectoryIterator($source, RecursiveDirectoryIterator::SKIP_DOTS),
+            RecursiveIteratorIterator::SELF_FIRST
+        );
+
+        foreach ($iterator as $item) {
+            $dest_path = $destination . DIRECTORY_SEPARATOR . $iterator->getSubPathName();
+
+            if ($item->isDir()) {
+                wp_mkdir_p($dest_path);
+            } else {
+                copy($item, $dest_path);
+            }
+        }
+
+        return true;
+    }
+
+    /**
+     * Recursively remove directory
+     */
+    private function remove_directory($dir)
+    {
+        if (!is_dir($dir)) {
+            return false;
+        }
+
+        $iterator = new RecursiveIteratorIterator(
+            new RecursiveDirectoryIterator($dir, RecursiveDirectoryIterator::SKIP_DOTS),
+            RecursiveIteratorIterator::CHILD_FIRST
+        );
+
+        foreach ($iterator as $item) {
+            if ($item->isDir()) {
+                rmdir($item);
+            } else {
+                unlink($item);
+            }
+        }
+
+        rmdir($dir);
+        return true;
     }
 
     /**

@@ -65,6 +65,8 @@ class EchBay_ViettelPost_Settings
             $this->documentation_section();
         } elseif ($current_section === 'queue') {
             $this->queue_section();
+        } elseif ($current_section === 'update') {
+            $this->update_section();
         } else {
             woocommerce_admin_fields($this->get_settings());
         }
@@ -81,6 +83,7 @@ class EchBay_ViettelPost_Settings
         $sections = array(
             '' => 'Cài đặt',
             'queue' => 'Hàng đợi',
+            'update' => 'Cập nhật',
             'documentation' => 'Tài liệu hướng dẫn'
         );
 
@@ -1163,6 +1166,158 @@ document.addEventListener('DOMContentLoaded', function() {
                 <?php endif; ?>
             </td>
         </tr>
+    <?php
+    }
+
+    /**
+     * Display update section
+     */
+    public function update_section()
+    {
+        $current_version = ECHBAY_VIETTELPOST_VERSION;
+        $remote_version = $this->get_remote_version();
+        $update_available = $remote_version && version_compare($current_version, $remote_version, '<');
+    ?>
+        <div class="viettelpost-update-section">
+            <h2>Cập nhật Plugin</h2>
+            <br />
+
+            <div class="viettelpost-update-container">
+                <div class="viettelpost-update-info">
+                    <h3>Thông tin phiên bản</h3>
+                    <table class="form-table">
+                        <tr>
+                            <th scope="row">Phiên bản hiện tại:</th>
+                            <td><strong><?php echo esc_html($current_version); ?></strong></td>
+                        </tr>
+                        <tr>
+                            <th scope="row">Phiên bản mới nhất:</th>
+                            <td>
+                                <?php if ($remote_version): ?>
+                                    <strong><?php echo esc_html($remote_version); ?></strong>
+                                    <?php if ($update_available): ?>
+                                        <span style="color: #d63638; margin-left: 10px;">Có bản cập nhật mới!</span>
+                                    <?php else: ?>
+                                        <span style="color: #00a32a; margin-left: 10px;">Đã là phiên bản mới nhất</span>
+                                    <?php endif; ?>
+                                <?php else: ?>
+                                    <span style="color: #999;">Không thể kiểm tra</span>
+                                <?php endif; ?>
+                            </td>
+                        </tr>
+                    </table>
+                </div>
+
+                <?php if ($update_available): ?>
+                    <div class="viettelpost-update-actions">
+                        <h3>Cập nhật Plugin</h3>
+                        <p>Có phiên bản mới <strong><?php echo esc_html($remote_version); ?></strong> của plugin. Bấm nút bên dưới để cập nhật tự động.</p>
+                        <p><strong>Lưu ý:</strong> Quá trình cập nhật sẽ ghi đè lên tất cả các file của plugin hiện tại. Vui lòng sao lưu trước khi cập nhật.</p>
+
+                        <button type="button" id="echbay-viettelpost-update-btn" class="button button-primary button-large">
+                            Cập nhật lên phiên bản <?php echo esc_html($remote_version); ?>
+                        </button>
+
+                        <div id="echbay-viettelpost-update-progress" style="margin-top: 15px; display: none;">
+                            <div class="update-progress-bar" style="background: #f0f0f1; border-radius: 3px; height: 20px; overflow: hidden;">
+                                <div class="update-progress-fill" style="background: #00a32a; height: 100%; width: 0%; transition: width 0.3s;"></div>
+                            </div>
+                            <p id="echbay-viettelpost-update-status" style="margin-top: 10px; color: #666;"></p>
+                        </div>
+                    </div>
+                <?php endif; ?>
+
+                <div class="viettelpost-update-changelog">
+                    <h3>Thông tin cập nhật</h3>
+                    <p>Plugin sẽ tự động kiểm tra phiên bản mới từ GitHub repository:</p>
+                    <ul>
+                        <li>Repository: <a href="https://github.com/itvn9online/echbay-viettelpost-woocommerce" target="_blank">echbay-viettelpost-woocommerce</a></li>
+                        <li>URL kiểm tra version: <code>https://github.com/itvn9online/echbay-viettelpost-woocommerce/raw/refs/heads/main/VERSION</code></li>
+                        <li>Download URL: <code>https://github.com/itvn9online/echbay-viettelpost-woocommerce/archive/refs/heads/main.zip</code></li>
+                    </ul>
+
+                    <h4>Quá trình cập nhật</h4>
+                    <ol>
+                        <li>Kiểm tra phiên bản mới từ GitHub</li>
+                        <li>Tải file .zip từ repository</li>
+                        <li>Sao lưu plugin hiện tại</li>
+                        <li>Giải nén và cập nhật file mới</li>
+                        <li>Làm sạch file tạm</li>
+                    </ol>
+                </div>
+            </div>
+
+            <script>
+                jQuery(document).ready(function($) {
+                    $('#echbay-viettelpost-update-btn').on('click', function() {
+                        var $btn = $(this);
+                        var $progress = $('#echbay-viettelpost-update-progress');
+                        var $progressFill = $('.update-progress-fill');
+                        var $status = $('#echbay-viettelpost-update-status');
+
+                        $btn.prop('disabled', true);
+                        $progress.show();
+                        $progressFill.css('width', '10%');
+                        $status.text('Đang bắt đầu cập nhật...');
+
+                        $.ajax({
+                            url: ajaxurl,
+                            type: 'POST',
+                            data: {
+                                action: 'echbay_viettelpost_update',
+                                _wpnonce: '<?php echo wp_create_nonce('echbay_viettelpost_update'); ?>'
+                            },
+                            xhr: function() {
+                                var xhr = new window.XMLHttpRequest();
+                                xhr.addEventListener("progress", function(evt) {
+                                    if (evt.lengthComputable) {
+                                        var percentComplete = evt.loaded / evt.total * 100;
+                                        $progressFill.css('width', percentComplete + '%');
+                                    }
+                                }, false);
+                                return xhr;
+                            },
+                            success: function(response) {
+                                $progressFill.css('width', '100%');
+                                if (response.success) {
+                                    $status.html('<span style="color: #00a32a;">Cập nhật thành công! Đang tải lại trang...</span>');
+                                    setTimeout(function() {
+                                        window.location.reload();
+                                    }, 2000);
+                                } else {
+                                    $status.html('<span style="color: #d63638;">Lỗi: ' + response.data + '</span>');
+                                    $btn.prop('disabled', false);
+                                }
+                            },
+                            error: function() {
+                                $progressFill.css('width', '0%');
+                                $status.html('<span style="color: #d63638;">Lỗi kết nối</span>');
+                                $btn.prop('disabled', false);
+                            }
+                        });
+                    });
+                });
+            </script>
+        </div>
 <?php
+    }
+
+    /**
+     * Get remote version from GitHub
+     */
+    private function get_remote_version()
+    {
+        $response = wp_remote_get('https://github.com/itvn9online/echbay-viettelpost-woocommerce/raw/refs/heads/main/VERSION', array(
+            'timeout' => 10,
+            'headers' => array(
+                'User-Agent' => 'EchBay-ViettelPost-Plugin/' . ECHBAY_VIETTELPOST_VERSION
+            )
+        ));
+
+        if (is_wp_error($response) || wp_remote_retrieve_response_code($response) !== 200) {
+            return false;
+        }
+
+        return trim(wp_remote_retrieve_body($response));
     }
 }
