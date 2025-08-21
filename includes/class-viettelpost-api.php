@@ -266,18 +266,7 @@ class EchBay_ViettelPost_API
      */
     public function calculate_price($data)
     {
-        $default_data = array(
-            'PRODUCT_WEIGHT' => 1000, // gram
-            'PRODUCT_PRICE' => 0,
-            'MONEY_COLLECTION' => 0,
-            'ORDER_SERVICE_ADD' => '',
-            'ORDER_SERVICE' => 'STK', // Default service
-            'NATIONAL_TYPE' => 1, // Domestic
-        );
-
-        $data = wp_parse_args($data, $default_data);
-
-        return $this->make_request('/order/getPriceAll', 'POST', $data);
+        return $this->get_services_id_district($data);
     }
 
     /**
@@ -395,11 +384,21 @@ class EchBay_ViettelPost_API
      */
     public function print_order($order_numbers)
     {
-        if (is_array($order_numbers)) {
-            $order_numbers = implode(',', $order_numbers);
+        if (!is_array($order_numbers)) {
+            if (!is_numeric($order_numbers)) {
+                return new WP_Error('invalid_order', 'Đơn hàng không hợp lệ');
+            }
+            $order_numbers = [$order_numbers];
+        } else if (empty($order_numbers)) {
+            return new WP_Error('invalid_order', 'Đơn hàng không hợp lệ');
         }
 
-        return $this->make_request('/order/print?orderNumber=' . $order_numbers);
+        return $this->make_request('/order/printing-code', 'POST', [
+            // thời gian link hết hạn (tương lai), đơn vị epoch in millisecond.
+            'EXPIRY_TIME' => (time() + 24 * 3600) * 1000,
+            // mảng mã vận đơn của VTP cần tạo link in, tối đa 100 vận đơn
+            'ORDER_ARRAY' => $order_numbers,
+        ]);
     }
 
     /**
@@ -428,49 +427,6 @@ class EchBay_ViettelPost_API
      */
     public function format_address($address_data)
     {
-        if (1 > 2) {
-            // global $tinh_thanhpho;
-            // global $quan_huyen;
-
-            // lấy thư mục plugins của wordpress
-            $plugins_dir = WP_PLUGIN_DIR;
-            // echo $plugins_dir;
-
-            // nạp dữ liệu quận huyện
-            $qh_path = $plugins_dir . '/woo-vietnam-checkout/cities/quan_huyen.php';
-            if (is_file($qh_path)) {
-                include_once $qh_path;
-
-                // 
-                if (!empty($quan_huyen)) {
-                    // echo '<pre>' . print_r($quan_huyen, true) . '</pre>';
-
-                    // Format district
-                    foreach ($quan_huyen as $v) {
-                        if ($v['matp'] == $address_data['province'] && $v['maqh'] == $address_data['district']) {
-                            $address_data['district'] = $v['name'];
-                            break;
-                        }
-                    }
-                }
-
-                // Tỉnh thành phố
-                $ttp_path = $plugins_dir . '/woo-vietnam-checkout/cities/tinh_thanhpho.php';
-                if (is_file($ttp_path)) {
-                    include_once $ttp_path;
-
-                    // Tỉnh thành phố
-                    if (!empty($tinh_thanhpho)) {
-                        // echo '<pre>' . print_r($tinh_thanhpho, true) . '</pre>';
-
-                        // Format province
-                        if (isset($tinh_thanhpho[$address_data['province']])) {
-                            $address_data['province'] = $tinh_thanhpho[$address_data['province']];
-                        }
-                    }
-                }
-            }
-        }
         // echo '<pre>' . print_r($address_data, true) . '</pre>';
 
         // Create an instance of the checkout class

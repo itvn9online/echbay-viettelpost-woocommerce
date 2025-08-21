@@ -30,8 +30,8 @@ class EchBay_ViettelPost_Order_Handler
         // Admin order actions
         add_action('woocommerce_order_actions', array($this, 'add_order_actions'));
         add_action('woocommerce_order_action_create_viettelpost_order', array($this, 'create_viettelpost_order_action'));
-        add_action('woocommerce_order_action_print_viettelpost_label', array($this, 'print_viettelpost_label_action'));
-        add_action('woocommerce_order_action_track_viettelpost_order', array($this, 'track_viettelpost_order_action'));
+        // add_action('woocommerce_order_action_print_viettelpost_label', array($this, 'print_viettelpost_label_action'));
+        // add_action('woocommerce_order_action_track_viettelpost_order', array($this, 'track_viettelpost_order_action'));
 
         // Add meta boxes
         add_action('add_meta_boxes', array($this, 'add_order_meta_boxes'));
@@ -42,7 +42,7 @@ class EchBay_ViettelPost_Order_Handler
 
         // AJAX handlers
         add_action('wp_ajax_viettelpost_create_order', array($this, 'ajax_create_order'));
-        add_action('wp_ajax_viettelpost_track_order', array($this, 'ajax_track_order'));
+        // add_action('wp_ajax_viettelpost_track_order', array($this, 'ajax_track_order'));
         add_action('wp_ajax_viettelpost_print_label', array($this, 'ajax_print_label'));
 
         // Scheduled task for tracking updates
@@ -336,8 +336,8 @@ class EchBay_ViettelPost_Order_Handler
     public function add_order_actions($actions)
     {
         $actions['create_viettelpost_order'] = 'Tạo vận đơn ViettelPost';
-        $actions['print_viettelpost_label'] = 'In nhãn ViettelPost';
-        $actions['track_viettelpost_order'] = 'Tra cứu vận đơn ViettelPost';
+        // $actions['print_viettelpost_label'] = 'In nhãn ViettelPost';
+        // $actions['track_viettelpost_order'] = 'Tra cứu vận đơn ViettelPost';
 
         return $actions;
     }
@@ -439,7 +439,7 @@ class EchBay_ViettelPost_Order_Handler
             }
 
             echo '<p>';
-            echo '<button type="button" class="button viettelpost-track-order" data-order-id="' . $order->get_id() . '">' . 'Cập nhật tracking' . '</button> ';
+            // echo '<button type="button" class="button viettelpost-track-order" data-order-id="' . $order->get_id() . '">' . 'Cập nhật tracking' . '</button> ';
             echo '<button type="button" class="button viettelpost-print-label" data-order-id="' . $order->get_id() . '">' . 'In nhãn' . '</button>';
             echo '</p>';
         } else {
@@ -590,7 +590,8 @@ class EchBay_ViettelPost_Order_Handler
         if (is_wp_error($result)) {
             wp_send_json_error($result->get_error_message());
         } else {
-            wp_send_json_success('Đã gửi yêu cầu in nhãn');
+            // wp_send_json_success('Đã gửi yêu cầu in nhãn');
+            wp_send_json_success($result);
         }
     }
 
