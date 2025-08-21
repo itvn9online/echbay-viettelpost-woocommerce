@@ -425,7 +425,7 @@ class EchBay_ViettelPost_Order_Handler
         echo '<div class="viettelpost-order-info">';
 
         if ($order_number) {
-            echo '<p><strong>' . 'Mã vận đơn:' . '</strong> ' . esc_html($order_number) . '</p>';
+            echo '<p><strong>' . 'Mã vận đơn:' . '</strong> ' . sprintf('<a href="https://viettelpost.vn/thong-tin-don-hang?peopleTracking=sender&orderNumber=%s&orderType=1" target="_blank" rel="noopener noreferrer">%s</a>', esc_html($order_number), esc_html($order_number)) . '</p>';
             echo '<p><strong>' . 'Ngày tạo:' . '</strong> ' . esc_html($created_date) . '</p>';
             echo '<p><strong>' . 'Dịch vụ:' . '</strong> ' . esc_html($service_type) . '</p>';
 
@@ -468,7 +468,8 @@ class EchBay_ViettelPost_Order_Handler
         if ($order_number) {
             echo '<div class="viettelpost-info">';
             echo '<h3>' . 'Thông tin ViettelPost' . '</h3>';
-            echo '<p><strong>' . 'Mã vận đơn:' . '</strong> ' . esc_html($order_number) . '</p>';
+            // gắn thêm link dẫn sang ViettelPost
+            echo '<p><strong>' . 'Mã vận đơn:' . '</strong> ' . sprintf('<a href="https://viettelpost.vn/thong-tin-don-hang?peopleTracking=sender&orderNumber=%s&orderType=1" target="_blank" rel="noopener noreferrer">%s</a>', esc_html($order_number), esc_html($order_number)) . '</p>';
             echo '</div>';
         }
     }
