@@ -130,6 +130,11 @@ jQuery(document).ready(function ($) {
 							`https://dev-print.viettelpost.vn/DigitalizePrint/report.do?type=1001&bill=${code}&showPostage=1`
 						);
 
+						// Xóa các nhãn in cũ
+						if ($(".viettelpost-print-labels").length > 0) {
+							$(".viettelpost-print-labels").remove();
+						}
+
 						// tạo HTML các mẫu in A5, A6, A7 và chèn vào sau nút .viettelpost-print-label cho người dùng admin
 						var printHtml = '<div class="viettelpost-print-labels">';
 						printHtml += "<h4>Mẫu in ViettelPost</h4>";
@@ -156,9 +161,6 @@ jQuery(document).ready(function ($) {
 							'&showPostage=1" target="_blank">Nhãn A7.1</a></li>';
 						printHtml += "</ul>";
 						printHtml += "</div>";
-						if ($(".viettelpost-print-labels").length > 0) {
-							$(".viettelpost-print-labels").remove();
-						}
 						$button.after(printHtml);
 					} else {
 						alert("✓ " + response.data);
