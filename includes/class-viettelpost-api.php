@@ -51,7 +51,7 @@ class EchBay_ViettelPost_API
         $this->username = get_option('echbay_viettelpost_username', '');
         $this->password = get_option('echbay_viettelpost_password', '');
         $this->environment = get_option('echbay_viettelpost_environment', 'development');
-        $this->token = get_transient('echbay_viettelpost_token');
+        $this->token = get_transient('echbay_viettelpost_long_token');
     }
 
     /**
@@ -66,6 +66,7 @@ class EchBay_ViettelPost_API
 
     /**
      * Login and get token
+     * Đăng nhập để lấy token tạm
      */
     public function login()
     {
@@ -92,9 +93,47 @@ class EchBay_ViettelPost_API
         $data = json_decode($body, true);
 
         if (isset($data['status']) && $data['status'] == 200 && isset($data['data']['token'])) {
+            // Cache token for 23 hours
+            set_transient('echbay_viettelpost_token', $data['data']['token'], 23 * HOUR_IN_SECONDS);
+            return $this->ownerconnect($data['data']['token']);
+        }
+
+        return new WP_Error('login_failed', isset($data['message']) ? $data['message'] : 'Đăng nhập thất bại');
+    }
+
+    /**
+     * Login and get token
+     * Lấy token dài hạn (có thời hạn sử dụng 1-2 năm từ thời điểm lấy)
+     */
+    protected function ownerconnect($token)
+    {
+        if (empty($this->username) || empty($this->password)) {
+            return new WP_Error('missing_credentials', 'Thiếu thông tin đăng nhập API');
+        }
+
+        $response = wp_remote_post($this->get_api_base_url() . '/user/ownerconnect', array(
+            'headers' => array(
+                'Content-Type' => 'application/json',
+                'Token' => $token
+            ),
+            'body' => json_encode(array(
+                'USERNAME' => $this->username,
+                'PASSWORD' => $this->password
+            )),
+            'timeout' => 30
+        ));
+
+        if (is_wp_error($response)) {
+            return $response;
+        }
+
+        $body = wp_remote_retrieve_body($response);
+        $data = json_decode($body, true);
+
+        if (isset($data['status']) && $data['status'] == 200 && isset($data['data']['token'])) {
             $this->token = $data['data']['token'];
-            // Cache token for 11 hours
-            set_transient('echbay_viettelpost_token', $this->token, 11 * HOUR_IN_SECONDS);
+            // Cache token for 360 days
+            set_transient('echbay_viettelpost_long_token', $this->token, 360 * DAY_IN_SECONDS);
             return $this->token;
         }
 
@@ -140,6 +179,7 @@ class EchBay_ViettelPost_API
         // If token expired, try to login again
         if (isset($decoded['status']) && $decoded['status'] == 401) {
             delete_transient('echbay_viettelpost_token');
+            delete_transient('echbay_viettelpost_long_token');
             $this->token = null;
             $login_result = $this->login();
             if (is_wp_error($login_result)) {

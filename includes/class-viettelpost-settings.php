@@ -99,8 +99,6 @@ class EchBay_ViettelPost_Settings
      */
     public function documentation_section()
     {
-        // TEST token
-        // echo 'echbay_viettelpost_token: ' . get_transient('echbay_viettelpost_token') . '<br>' . PHP_EOL;
 ?>
         <div class="viettelpost-documentation">
             <h2>Tài liệu hướng dẫn ViettelPost WooCommerce</h2>
@@ -140,7 +138,20 @@ class EchBay_ViettelPost_Settings
                             <li>Vào <strong>WooCommerce > Settings > ViettelPost</strong></li>
                             <li>Nhập <strong>Username</strong> và <strong>Password</strong> ViettelPost Partner</li>
                             <li>Nhập <strong>Mã khách hàng</strong> nếu có</li>
-                            <li>Nhấn <strong>"Kiểm tra kết nối"</strong> để test API</li>
+                            <li>Nhấn <strong>"Kiểm tra kết nối"</strong> để test API. Nếu kết nối thành công sẽ có thông báo thành công và có token hiển thị bên dưới.</li>
+                            <?php
+                            // hiển thị token vơi tài khoản admin cao nhất
+                            if (current_user_can('administrator')) {
+                            ?>
+                                <li>Token tạm
+                                    <input type="text" value="<?php echo esc_attr(get_transient('echbay_viettelpost_token')); ?>" onclick="this.select();" style="color: #999;" readonly />
+                                </li>
+                                <li>Token dài hạn (có thời hạn sử dụng 1-2 năm từ thời điểm lấy)
+                                    <input type="text" value="<?php echo esc_attr(get_transient('echbay_viettelpost_long_token')); ?>" onclick="this.select();" style="color: #999;" readonly />
+                                </li>
+                            <?php
+                            }
+                            ?>
                         </ol>
 
                         <h4>Bước 2: Cấu hình thông tin người gửi</h4>
@@ -913,6 +924,7 @@ document.addEventListener('DOMContentLoaded', function() {
 
         // Xóa token cũ
         // delete_transient('echbay_viettelpost_token');
+        // delete_transient('echbay_viettelpost_long_token');
 
         // đăng nhập để lấy token mới
         $api = new EchBay_ViettelPost_API();

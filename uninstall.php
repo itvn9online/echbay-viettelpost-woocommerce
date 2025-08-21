@@ -32,6 +32,7 @@ delete_option('echbay_viettelpost_wards');
 
 // Delete transients
 delete_transient('echbay_viettelpost_token');
+delete_transient('echbay_viettelpost_long_token');
 
 // Clear scheduled events
 // wp_clear_scheduled_hook('echbay_viettelpost_sync_locations');
